@@ -28,7 +28,7 @@ function sph(r, color, x, y, z) {
 }
 
 /* ---------- 房间外壳（每间一样大，参数化配色） ---------- */
-function shell(parent, { wall, floor, wainscot = 0x6b5a49 }) {
+function shell(parent, { wall, floor, wainscot = 0x453a2c }) {
   // 地板
   const floorMesh = box(10.6, 0.3, 10.6, floor, 0, -0.15, 0);
   parent.add(floorMesh);
@@ -49,49 +49,94 @@ function shell(parent, { wall, floor, wainscot = 0x6b5a49 }) {
   parent.add(box(0.08, 0.5, 10.8, wainscot, -4.98, 0.25, 0));
   parent.add(box(0.08, 0.5, 10.8, wainscot, 4.98, 0.25, 0));
   // 天花板
-  parent.add(box(10.8, 0.2, 10.8, 0x2c3050, 0, 5.1, 0));
+  parent.add(box(10.8, 0.2, 10.8, 0x221d19, 0, 5.1, 0));
 }
 
-/* ---------- 主角阿堵（低多边形卡通小人） ---------- */
+/* ---------- 主角阿堵（低多边形 · 绣湖式暗调小大人） ---------- */
 export function buildBoy() {
   const g = new THREE.Group();
   // 腿
-  const legL = box(0.22, 0.5, 0.24, 0x3a4062, -0.14, 0.3, 0);
-  const legR = box(0.22, 0.5, 0.24, 0x3a4062, 0.14, 0.3, 0);
+  const legL = box(0.22, 0.5, 0.24, 0x39405a, -0.14, 0.3, 0);
+  const legR = box(0.22, 0.5, 0.24, 0x39405a, 0.14, 0.3, 0);
   // 鞋
-  legL.add(box(0.26, 0.14, 0.36, 0xc9564c, 0, -0.28, 0.05));
-  legR.add(box(0.26, 0.14, 0.36, 0xc9564c, 0, -0.28, 0.05));
+  legL.add(box(0.26, 0.14, 0.36, 0x8f463e, 0, -0.28, 0.05));
+  legR.add(box(0.26, 0.14, 0.36, 0x8f463e, 0, -0.28, 0.05));
   g.add(legL, legR);
   // 身体（毛衣 + 背带裤）
-  g.add(box(0.62, 0.55, 0.42, 0xf2a54a, 0, 0.87, 0));
-  g.add(box(0.5, 0.34, 0.36, 0x45528c, 0, 0.72, 0.01));
-  g.add(box(0.52, 0.1, 0.38, 0x3a4578, 0, 0.86, 0.01));
+  g.add(box(0.62, 0.55, 0.42, 0xd0923f, 0, 0.87, 0));
+  g.add(box(0.5, 0.34, 0.36, 0x414c74, 0, 0.72, 0.01));
+  g.add(box(0.52, 0.1, 0.38, 0x37406a, 0, 0.86, 0.01));
   // 手臂
-  const armL = box(0.16, 0.42, 0.18, 0xe2933c, -0.38, 0.92, 0);
-  const armR = box(0.16, 0.42, 0.18, 0xe2933c, 0.38, 0.92, 0);
+  const armL = box(0.16, 0.42, 0.18, 0xc08238, -0.38, 0.92, 0);
+  const armR = box(0.16, 0.42, 0.18, 0xc08238, 0.38, 0.92, 0);
   g.add(armL, armR);
   // 围巾
-  g.add(box(0.5, 0.13, 0.46, 0xd95d5d, 0, 1.2, 0));
-  g.add(box(0.14, 0.26, 0.08, 0xd95d5d, 0.2, 1.06, 0.24));
+  g.add(box(0.5, 0.13, 0.46, 0x9e4c47, 0, 1.2, 0));
+  g.add(box(0.14, 0.26, 0.08, 0x9e4c47, 0.2, 1.06, 0.24));
   // 头
-  const head = sph(0.42, 0xffe3c9, 0, 1.66, 0);
+  const head = sph(0.42, 0xefd8bb, 0, 1.66, 0);
   // 头发（上半覆盖 + 呆毛）
-  const hair = sph(0.44, 0x6b4a35, 0, 1.72, -0.02);
+  const hair = sph(0.44, 0x4c3a2b, 0, 1.72, -0.02);
   hair.scale.set(1, 0.72, 1);
   hair.position.y = 1.76;
   head.add(hair);
-  const tuft = box(0.06, 0.22, 0.06, 0x6b4a35, 0.04, 0.46, 0);
+  const tuft = box(0.06, 0.22, 0.06, 0x4c3a2b, 0.04, 0.46, 0);
   tuft.rotation.z = -0.5;
   head.add(tuft);
-  // 独眼
-  const eyeWhite = sph(0.13, 0xffffff, 0, 1.64, 0.34);
-  const iris = sph(0.075, 0x1c2030, 0, 1.64, 0.42);
-  const glimmer = sph(0.028, 0xfff7e6, -0.03, 1.68, 0.44);
-  g.add(head, eyeWhite, iris, glimmer);
-  // 腮红
-  g.add(sph(0.06, 0xffb3a0, -0.2, 1.58, 0.32));
-  g.add(sph(0.06, 0xffb3a0, 0.2, 1.58, 0.32));
-  return { group: g, legL, legR, armL, armR, iris, head };
+  // 独眼——「万花筒之瞳」：暖白眼底 + 八瓣放射花纹（青/绯/金）+ 鎏金外环 + 墨瞳，整体可旋转
+  const eyeWhite = sph(0.135, 0xf3ecdb, 0, 1.64, 0.34);
+  g.add(head, eyeWhite);
+  const eye = new THREE.Group();
+  eye.position.set(0, 1.64, 0.44);
+  g.add(eye);
+  // 虹膜晶状底盘（深夜蓝，微微凸出）
+  const irisBase = new THREE.Mesh(
+    new THREE.SphereGeometry(0.078, 28, 20),
+    MAT(0x15222e, { roughness: 0.35, metalness: 0.15 })
+  );
+  irisBase.scale.set(1, 1, 0.35);
+  irisBase.position.z = 0.01;
+  eye.add(irisBase);
+  // 八片放射花瓣，三色循环，微微自发光
+  const petalGeo = new THREE.SphereGeometry(0.03, 10, 8);
+  const petalCols = [0x2e7f76, 0xa8403a, 0xc9a227];
+  const eyeGlowMats = [];
+  for (let i = 0; i < 8; i++) {
+    const col = petalCols[i % 3];
+    const pm = MAT(col, { roughness: 0.4, emissive: col, emissiveIntensity: 0.3 });
+    eyeGlowMats.push(pm);
+    const petal = new THREE.Mesh(petalGeo, pm);
+    petal.scale.set(1, 0.42, 0.3);
+    const a = (i / 8) * Math.PI * 2;
+    petal.position.set(Math.cos(a) * 0.046, Math.sin(a) * 0.046, 0.046);
+    petal.rotation.z = a;
+    eye.add(petal);
+  }
+  // 鎏金外环
+  const goldRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.081, 0.009, 10, 36),
+    MAT(0xc9a227, { roughness: 0.28, metalness: 0.75, emissive: 0x6b5210, emissiveIntensity: 0.45 })
+  );
+  goldRing.position.z = 0.036;
+  eye.add(goldRing);
+  eyeGlowMats.push(goldRing.material);
+  // 墨瞳 + 高光
+  const pupil = new THREE.Mesh(
+    new THREE.CircleGeometry(0.02, 24),
+    new THREE.MeshBasicMaterial({ color: 0x05080e })
+  );
+  pupil.position.z = 0.052;
+  eye.add(pupil);
+  const glimmer = new THREE.Mesh(
+    new THREE.CircleGeometry(0.011, 16),
+    new THREE.MeshBasicMaterial({ color: 0xfff8e8 })
+  );
+  glimmer.position.set(-0.026, 0.026, 0.056);
+  eye.add(glimmer);
+  // 腮红（收敛）
+  g.add(sph(0.06, 0xcf9382, -0.2, 1.58, 0.32));
+  g.add(sph(0.06, 0xcf9382, 0.2, 1.58, 0.32));
+  return { group: g, legL, legR, armL, armR, iris: eye, eye, eyeGlowMats, head };
 }
 
 /* ---------- 火焰（未来态危险元素） ---------- */
@@ -127,27 +172,27 @@ function tag(group, interact, iid, mesh) {
 /* ---------- 房间 1：卧室 ---------- */
 function buildBedroom(scene, interact) {
   const g = new THREE.Group();
-  shell(g, { wall: 0x75829c, floor: 0xc89b6d });
+  shell(g, { wall: 0x5c6572, floor: 0x7d6647 });
 
   // 窗 + 窗帘（后墙）
-  tag(g, interact, 'curtain', box(3.2, 2.6, 0.2, 0x8fa8c9, -2.7, 3.1, -4.85));
-  g.add(box(3.6, 0.3, 0.28, 0x5a4632, -2.7, 4.55, -4.8));   // 窗楣
-  g.add(box(3.6, 0.3, 0.28, 0x5a4632, -2.7, 1.75, -4.8));   // 窗台
+  tag(g, interact, 'curtain', box(3.2, 2.6, 0.2, 0x6e7d8c, -2.7, 3.1, -4.85));
+  g.add(box(3.6, 0.3, 0.28, 0x47382a, -2.7, 4.55, -4.8));   // 窗楣
+  g.add(box(3.6, 0.3, 0.28, 0x47382a, -2.7, 1.75, -4.8));   // 窗台
   for (const s of [-1, 1]) {
-    const curtain = box(0.5, 2.9, 0.14, s < 0 ? 0xffd9b0 : 0xffd9b0, -2.7 + s * 1.75, 3.0, -4.72);
+    const curtain = box(0.5, 2.9, 0.14, 0xd6c2a0, -2.7 + s * 1.75, 3.0, -4.72);
     tag(g, interact, 'curtain', curtain);
   }
   // 炉子 + 水壶
   const stove = new THREE.Group();
-  stove.add(box(1.1, 1.05, 1.0, 0x5a6068, 0, 0.55, 0));
-  stove.add(box(1.2, 0.12, 1.1, 0x3e444d, 0, 1.12, 0));
+  stove.add(box(1.1, 1.05, 1.0, 0x4a4f57, 0, 0.55, 0));
+  stove.add(box(1.2, 0.12, 1.1, 0x33373d, 0, 1.12, 0));
   stove.position.set(-2.7, 0, -3.9);
-  const stoveGlow = new THREE.PointLight(0xff6a2a, 0.7, 5);
+  const stoveGlow = new THREE.PointLight(0xd95a28, 0.55, 5);
   stoveGlow.position.set(-2.7, 0.9, -3.5);
-  const kettle = cyl(0.3, 0.24, 0.42, 0xe8e4d8, -2.7, 1.4, -3.9);
-  const kettleSpout = cyl(0.05, 0.09, 0.3, 0xe8e4d8, -2.35, 1.42, -3.9);
+  const kettle = cyl(0.3, 0.24, 0.42, 0xcac2ae, -2.7, 1.4, -3.9);
+  const kettleSpout = cyl(0.05, 0.09, 0.3, 0xcac2ae, -2.35, 1.42, -3.9);
   kettleSpout.rotation.z = 0.7;
-  const kettleLid = cyl(0.12, 0.14, 0.06, 0xd8d2c0, -2.7, 1.64, -3.9);
+  const kettleLid = cyl(0.12, 0.14, 0.06, 0xb5ad96, -2.7, 1.64, -3.9);
   stove.userData.iid = 'stove'; kettle.userData.iid = 'stove'; kettleSpout.userData.iid = 'stove'; kettleLid.userData.iid = 'stove';
   g.add(stove, stoveGlow, kettle, kettleSpout, kettleLid);
   if (!interact.has('stove')) interact.set('stove', []);
@@ -155,11 +200,11 @@ function buildBedroom(scene, interact) {
 
   // 床（左区）
   const bed = new THREE.Group();
-  bed.add(box(1.7, 0.35, 2.6, 0x8a5f3c, 0, 0.35, 0));           // 床架
-  bed.add(box(1.6, 0.22, 2.4, 0xffe3c9, 0, 0.62, 0));           // 床垫
-  bed.add(box(1.62, 0.18, 1.1, 0xff8fa3, 0, 0.66, 0.6));        // 被子
-  bed.add(box(0.7, 0.16, 0.44, 0xfdf8ee, 0, 0.74, -0.95));      // 枕头
-  bed.add(box(1.7, 1.2, 0.16, 0x6e4a2e, 0, 0.95, -1.35));       // 床头板
+  bed.add(box(1.7, 0.35, 2.6, 0x6b4b30, 0, 0.35, 0));           // 床架
+  bed.add(box(1.6, 0.22, 2.4, 0xcfc2a4, 0, 0.62, 0));           // 床垫
+  bed.add(box(1.62, 0.18, 1.1, 0x8e5158, 0, 0.66, 0.6));        // 被子
+  bed.add(box(0.7, 0.16, 0.44, 0xded5bd, 0, 0.74, -0.95));      // 枕头
+  bed.add(box(1.7, 1.2, 0.16, 0x553e28, 0, 0.95, -1.35));       // 床头板
   bed.position.set(-3.3, 0, 0.2);
   bed.rotation.y = Math.PI / 2;
   bed.userData.iid = 'bed';
@@ -169,9 +214,9 @@ function buildBedroom(scene, interact) {
 
   // 玩具箱（右前角）
   const toybox = new THREE.Group();
-  toybox.add(box(1.2, 0.75, 0.85, 0xd97742, 0, 0.38, 0));
-  toybox.add(box(1.26, 0.16, 0.9, 0xbf6235, 0, 0.82, 0));
-  toybox.add(box(0.24, 0.16, 0.5, 0xffd166, 0, 0.95, 0));       // 盖口玩具
+  toybox.add(box(1.2, 0.75, 0.85, 0x96643f, 0, 0.38, 0));
+  toybox.add(box(1.26, 0.16, 0.9, 0x7d5234, 0, 0.82, 0));
+  toybox.add(box(0.24, 0.16, 0.5, 0xc9a94f, 0, 0.95, 0));       // 盖口玩具
   toybox.position.set(3.4, 0, 3.2);
   toybox.rotation.y = -0.4;
   toybox.userData.iid = 'toybox';
@@ -180,21 +225,21 @@ function buildBedroom(scene, interact) {
   interact.get('toybox').push(toybox);
 
   // 小地毯
-  const rug = cyl(1.5, 1.5, 0.04, 0xbb6a52, 0, 0.03, 0.6, 28);
+  const rug = cyl(1.5, 1.5, 0.04, 0x74504a, 0, 0.03, 0.6, 28);
   g.add(rug);
   tag(g, interact, 'rug', rug);
 
   // 画像（后墙）
-  const picture = box(0.9, 1.15, 0.08, 0xffe9c9, 2.8, 3.2, -4.92);
-  picture.add(box(1.02, 1.27, 0.05, 0xc9a45c, 0, 0, 0.04));
+  const picture = box(0.9, 1.15, 0.08, 0xd6c8a8, 2.8, 3.2, -4.92);
+  picture.add(box(1.02, 1.27, 0.05, 0xa8854a, 0, 0, 0.04));
   tag(g, interact, 'picture', picture);
 
   // 房门（右墙）
   const door = new THREE.Group();
-  door.add(box(1.15, 2.3, 0.14, 0x8a5f3c, 0, 0, 0));
-  door.add(box(0.95, 0.85, 0.05, 0x9c7047, 0, 0.45, 0.09));
-  door.add(box(0.95, 0.85, 0.05, 0x9c7047, 0, -0.55, 0.09));
-  door.add(sph(0.09, 0xe6c25a, 0.42, 0, 0.1));
+  door.add(box(1.15, 2.3, 0.14, 0x6b4b30, 0, 0, 0));
+  door.add(box(0.95, 0.85, 0.05, 0x7d5a39, 0, 0.45, 0.09));
+  door.add(box(0.95, 0.85, 0.05, 0x7d5a39, 0, -0.55, 0.09));
+  door.add(sph(0.09, 0xc0a04e, 0.42, 0, 0.1));
   door.position.set(4.75, 1.15, 1.4);
   door.userData.iid = 'door';
   g.add(door);
@@ -467,12 +512,12 @@ export function buildRoom(i, scene, interact) {
 /* ---------- 房间灯光 ---------- */
 export function roomLights(scene, index) {
   const lights = [];
-  const amb = new THREE.AmbientLight(0x9aa4c8, index === 1 ? 0.55 : 0.5);
-  const hemi = new THREE.HemisphereLight(0xdfe8ff, 0x5a4a3a, 0.5);
-  const dir = new THREE.DirectionalLight(0xfff0d8, 0.6);
+  const amb = new THREE.AmbientLight(0x8a8272, index === 1 ? 0.45 : 0.4);
+  const hemi = new THREE.HemisphereLight(0x59524a, 0x241c14, 0.5);
+  const dir = new THREE.DirectionalLight(0xd9b98a, 0.5);
   dir.position.set(2, 6, 3);
   lights.push(amb, hemi, dir);
-  const main = new THREE.PointLight(0xffdbb0, 1.05, 18, 1.4);
+  const main = new THREE.PointLight(0xffc890, 1.0, 18, 1.4);
   main.position.set(0, 4.3, 0);
   lights.push(main);
   lights.forEach((l) => scene.add(l));

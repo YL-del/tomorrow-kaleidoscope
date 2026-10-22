@@ -16,6 +16,7 @@ let built = null;             // buildRoom 结果
 let lights = [];
 let peeking = false;
 let peeksUsed = 0;
+let eyeSpinV = 0.6;
 let selItem = null;           // 选中的道具 id
 let dialogState = null;       // { lines, idx, chars, cb }
 let running = true;
@@ -51,8 +52,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x151a30, 12, 30);
-scene.background = new THREE.Color(0x151a30);
+scene.fog = new THREE.Fog(0x171310, 10, 26);
+scene.background = new THREE.Color(0x171310);
 
 const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 60);
 
@@ -554,8 +555,11 @@ function loop() {
       boy.armL.rotation.x *= 0.8; boy.armR.rotation.x *= 0.8;
       boy.group.position.y = Math.sin(t * 2.2) * 0.012;
     }
-    // 万花筒瞳微微发光
-    boy.iris.material.color.setHSL(0.62, 0.5, 0.25 + Math.abs(Math.sin(t * 1.4)) * 0.16);
+    // 万花筒之瞳：平时缓缓旋转，窥探未来时加速旋转 + 花纹发亮
+    eyeSpinV += ((peeking ? 6.0 : 0.6) - eyeSpinV) * Math.min(1, dt * 5);
+    boy.eye.rotation.z -= eyeSpinV * dt;
+    const glow = peeking ? 1.6 : 0.3 + Math.abs(Math.sin(t * 1.4)) * 0.25;
+    for (const m of boy.eyeGlowMats) m.emissiveIntensity = glow;
 
     // 场景小动画：摆锤 / 火焰 / 地球仪
     scene.traverse((o) => {
