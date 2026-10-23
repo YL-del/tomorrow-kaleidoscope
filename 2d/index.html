@@ -1,167 +1,140 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>明日万花筒 2D · 第一章 雾中宅邸</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>明日万花筒 2D · 里世界版</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #12100d;
-    font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }
-  #wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  canvas#gl { display: block; background: #b9c2c4; box-shadow: 0 0 80px rgba(0,0,0,.8); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #0d0b09; overflow: hidden;
+    font-family: "Kaiti SC", "KaiTi", "STKaiti", "Noto Serif SC", serif; user-select: none; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #stage { position: relative; aspect-ratio: 16/9; max-width: 100vw; max-height: 100vh; width: 100%; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: auto; }
 
-  /* ---------- 暗角 + 纸纹 ---------- */
+  /* 覆盖层 */
+  #grain { position: absolute; inset: 0; z-index: 13; pointer-events: none; opacity: .5; mix-blend-mode: overlay; }
   #vignette { position: absolute; inset: 0; z-index: 12; pointer-events: none;
-    background: radial-gradient(ellipse at center, transparent 42%, rgba(24,18,10,.34) 78%, rgba(12,9,5,.66) 100%); }
-  #grain { position: absolute; inset: -80px; z-index: 13; pointer-events: none; opacity: .07;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation: grain-shift .7s steps(3) infinite; }
-  @keyframes grain-shift { 0%{transform:translate(0,0)} 33%{transform:translate(-22px,12px)} 66%{transform:translate(16px,-18px)} 100%{transform:translate(0,0)} }
+    background: radial-gradient(ellipse at center, transparent 52%, rgba(10,7,4,.55) 100%); }
+  body.in-other #vignette { background: radial-gradient(ellipse at center, transparent 40%, rgba(30,6,4,.7) 100%); }
+  #scan { position: absolute; inset: 0; z-index: 14; pointer-events: none; opacity: .5;
+    background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.06) 3px 4px); }
 
-  /* ---------- 窥探未来 ---------- */
-  #peek-fx { position: absolute; inset: 0; z-index: 15; pointer-events: none; opacity: 0; transition: opacity .5s; }
-  #peek-fx.show { opacity: 1; }
-  #peek-fx .tint { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(58,32,8,.55) 100%);
-    box-shadow: inset 0 0 140px rgba(190,130,50,.4); }
-  #peek-fx .scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(235,205,140,.06) 0 1px, transparent 1px 4px); }
-  #peek-banner { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); z-index: 16; pointer-events: none;
-    color: #e8c87a; font-size: 15px; letter-spacing: 7px; padding: 7px 24px;
-    border: 1px solid rgba(232,200,122,.55); border-radius: 999px; background: rgba(30,20,8,.72);
-    opacity: 0; transition: opacity .4s; }
-  #peek-banner.show { opacity: 1; }
-  #peek-tip { position: absolute; bottom: 17%; left: 50%; transform: translateX(-50%); z-index: 16; pointer-events: none;
-    color: #b09468; font-size: 12px; letter-spacing: 2px; text-shadow: 0 1px 4px #000;
-    opacity: 0; transition: opacity .4s; }
-  #peek-tip.show { opacity: 1; }
+  /* HUD */
+  #hud { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+  #room-label { position: absolute; top: 14px; left: 22px; color: #e8dcbe; font-size: 24px;
+    letter-spacing: 4px; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+  #room-sub { font-size: 12px; letter-spacing: 3px; color: #a8935e; margin-top: 3px; }
+  #hud-right { position: absolute; top: 12px; right: 20px; display: flex; align-items: center; gap: 14px; }
+  #hearts { font-size: 22px; color: #c33a2e; letter-spacing: 3px; text-shadow: 0 2px 5px rgba(0,0,0,.7); }
+  #hearts .off { opacity: .22; filter: grayscale(1); }
+  #energy-wrap { width: 150px; height: 10px; background: rgba(12,8,6,.75); border: 1px solid #6e5a34; border-radius: 5px; overflow: hidden; }
+  #energy-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #7e1f1a, #c9402e); transition: width .2s; }
+  #energy-fill.low { background: linear-gradient(90deg, #4a4a4a, #8a3a2e); }
+  .hbtn { pointer-events: auto; width: 46px; height: 46px; border-radius: 50%; border: 1.6px solid #a8842e;
+    background: rgba(24,18,12,.8); color: #d8c48a; font-size: 19px; cursor: pointer; }
+  .hbtn:hover { background: rgba(60,42,22,.9); }
+  #eye-btn.on { background: radial-gradient(circle, #7e1f1a 20%, #3a0f0c 100%); color: #ffd9c8; box-shadow: 0 0 14px rgba(198,42,32,.55); }
+  #keyhelp { position: absolute; bottom: 10px; right: 18px; color: rgba(216,196,138,.5); font-size: 13px; letter-spacing: 2px; }
 
-  /* ---------- HUD ---------- */
-  .hud { position: absolute; z-index: 20; }
-  #room-label { top: 18px; left: 22px; color: #3a3228; font-size: 16px; letter-spacing: 3px; text-shadow: 0 1px 0 rgba(255,250,235,.5); }
-  #room-sub { color: #6d6350; font-size: 12px; margin-top: 3px; letter-spacing: 1px; }
-  #topright { top: 16px; right: 20px; display: flex; gap: 10px; align-items: center; }
-  .icon-btn { width: 46px; height: 46px; border-radius: 50%; border: 2px solid rgba(58,44,26,.55);
-    background: rgba(240,232,210,.75); color: #3a2e1c; font-size: 20px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; transition: transform .15s, background .2s; }
-  .icon-btn:hover { transform: scale(1.1); background: rgba(250,244,226,.92); }
-  #peek-btn.on { background: #c9a227; color: #241a06; box-shadow: 0 0 18px rgba(201,162,39,.6); }
-  #hint-count { color: #4a3d28; font-size: 13px; font-weight: 700; background: rgba(240,232,210,.75);
-    border-radius: 999px; padding: 6px 14px; border: 1px solid rgba(58,44,26,.4); }
+  /* 里世界横幅 */
+  #peek-banner { position: absolute; top: 12%; left: 50%; transform: translateX(-50%) translateY(-8px); z-index: 30;
+    color: #e8d9c8; font-size: 34px; letter-spacing: 14px; padding: 8px 34px 8px 48px;
+    border-top: 1px solid rgba(200,120,90,.6); border-bottom: 1px solid rgba(200,120,90,.6);
+    background: rgba(24,10,8,.55); text-shadow: 0 0 18px rgba(198,42,32,.6);
+    opacity: 0; pointer-events: none; transition: all .5s; }
+  #peek-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ---------- 光标标签 ---------- */
-  #cursor-tag { position: fixed; z-index: 25; pointer-events: none; display: none;
-    background: rgba(28,22,14,.88); color: #ecdfc2; font-size: 12px; letter-spacing: 1px;
-    padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(232,200,122,.4); }
-
-  /* ---------- 对话 ---------- */
-  #dialog { position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%);
-    width: min(720px, 92vw); z-index: 30; display: none; }
+  /* 对话框 */
+  #dialog { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); width: min(760px, 84%);
+    z-index: 40; background: rgba(244,236,214,.96); border: 2px solid #241a06; border-radius: 10px;
+    padding: 16px 22px 14px; cursor: pointer; display: none; box-shadow: 0 8px 30px rgba(0,0,0,.6); }
   #dialog.show { display: block; }
-  #dialog .who { position: absolute; top: -19px; left: 26px; background: #a8842e; color: #241a06;
-    font-weight: 700; font-size: 15px; padding: 4px 20px; border-radius: 999px;
-    border: 2px solid #241a06; box-shadow: 2px 2px 0 rgba(0,0,0,.3); }
-  #dialog .box { background: rgba(250,244,228,.94); border: 3px solid #241a06; border-radius: 18px;
-    padding: 22px 26px 16px; box-shadow: 4px 5px 0 rgba(0,0,0,.35); cursor: pointer; }
-  #dialog .text { color: #33291c; font-size: 17px; line-height: 1.9; min-height: 62px; }
-  #dialog .next { text-align: right; color: #8a6f3a; font-size: 12px; letter-spacing: 2px; }
+  #dialog-name { display: inline-block; background: #a8842e; color: #f4ecd6; font-size: 14px;
+    padding: 2px 12px; border-radius: 4px; margin-bottom: 6px; letter-spacing: 2px; }
+  #dialog-text { color: #241a06; font-size: 19px; line-height: 1.65; letter-spacing: .5px; min-height: 30px; }
 
-  /* ---------- 物品栏 ---------- */
-  #inv { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
-    z-index: 20; display: flex; gap: 12px; }
-  .slot { width: 62px; height: 62px; border-radius: 14px; border: 2px solid rgba(58,44,26,.55);
-    background: rgba(240,232,210,.72); cursor: pointer; position: relative;
-    display: flex; align-items: center; justify-content: center; transition: transform .15s; }
-  .slot:hover { transform: translateY(-3px); }
-  .slot.sel { border-color: #8a5a14; box-shadow: 0 0 16px rgba(201,162,39,.65); transform: translateY(-5px); }
-  .slot .slot-name { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
-    font-size: 11px; color: #4a3d28; white-space: nowrap; text-shadow: 0 1px 0 rgba(255,250,235,.6); }
-  .slot canvas { width: 46px; height: 46px; }
+  /* 行囊 */
+  #inv { position: absolute; bottom: 12px; left: 18px; z-index: 20; display: flex; gap: 8px; pointer-events: none; }
+  .inv-item { background: rgba(24,18,12,.82); border: 1px solid #6e5a34; border-radius: 6px;
+    padding: 5px 10px; color: #d8c48a; font-size: 14px; display: flex; gap: 6px; align-items: center; }
+  .inv-empty { color: rgba(216,196,138,.35); font-size: 13px; padding: 6px; letter-spacing: 2px; }
 
-  /* ---------- 提示条 ---------- */
-  #toast { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); z-index: 45;
-    color: #33291c; font-size: 14px; letter-spacing: 1px; background: rgba(250,244,228,.94);
-    border: 2px solid #241a06; padding: 9px 24px; border-radius: 999px;
-    box-shadow: 3px 3px 0 rgba(0,0,0,.3); opacity: 0; transition: opacity .35s; pointer-events: none; }
+  /* toast */
+  #toast { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 35;
+    background: rgba(24,18,12,.9); color: #e8dcbe; border: 1px solid #6e5a34; padding: 8px 20px;
+    border-radius: 6px; font-size: 15px; opacity: 0; transition: opacity .3s; pointer-events: none; }
   #toast.show { opacity: 1; }
 
-  /* ---------- 标题 / 结局 ---------- */
-  .overlay-panel { position: absolute; inset: 0; z-index: 40; display: none;
-    flex-direction: column; align-items: center; justify-content: center;
-    background: rgba(16,12,6,.55); }
-  .overlay-panel.show { display: flex; }
-  .panel-card { background: #f4ecd6; border: 3px solid #241a06; border-radius: 22px;
-    width: min(560px, 90vw); padding: 38px 42px; text-align: center;
-    box-shadow: 6px 7px 0 rgba(0,0,0,.4); }
-  .panel-card h2 { color: #33291c; font-size: 24px; letter-spacing: 6px; margin-bottom: 16px; }
-  .panel-card p { color: #4a3d28; font-size: 15px; line-height: 2; }
-  .panel-card .small { color: #8a7a58; font-size: 12px; margin-top: 14px; }
-  .btn { border: none; cursor: pointer; border-radius: 999px; font-family: inherit; margin-top: 22px;
-    background: linear-gradient(90deg, #8e3b32, #b0543a); color: #f4ecd6;
-    font-size: 17px; font-weight: 700; padding: 12px 36px;
-    box-shadow: 3px 4px 0 rgba(0,0,0,.35); transition: transform .15s; }
-  .btn:hover { transform: translateY(-2px); }
+  /* 标题屏 */
+  #title-screen { position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px; background: rgba(14,11,8,.5); }
+  #title-screen.hide, #title-screen:not(.show) { display: none; }
+  #title-name { color: #f0e6cc; font-size: 64px; letter-spacing: 22px; text-shadow: 0 0 30px rgba(201,162,39,.35), 0 4px 10px #000; }
+  #title-sub { color: #c9b98a; font-size: 17px; letter-spacing: 6px; margin-bottom: 8px; }
+  .tbtn { width: 260px; padding: 13px 0; font-size: 21px; letter-spacing: 8px; font-family: inherit;
+    border: none; border-radius: 40px; cursor: pointer; color: #f4ecd6; }
+  #btn-new { background: linear-gradient(#b0543a, #8e3b32); box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+  #btn-new:hover { filter: brightness(1.12); }
+  #btn-continue { background: rgba(60,48,30,.85); border: 1px solid #6e5a34; color: #d8c48a; }
+  #btn-continue.disabled { opacity: .35; pointer-events: none; }
+  #title-keys { color: rgba(216,196,138,.55); font-size: 14px; letter-spacing: 3px; margin-top: 14px; text-align: center; line-height: 2; }
 
-  /* ---------- 标题屏 ---------- */
-  #title-screen { background: rgba(18, 16, 13, .42); z-index: 50; }
-  #title-inner { text-align: center; }
-  #title-h1 { font-size: 52px; letter-spacing: 14px; color: #f4ecd6; font-weight: 800;
-    text-shadow: 0 4px 24px rgba(201,162,39,.45); }
-  #title-h2 { font-size: 15px; letter-spacing: 4px; color: #a89877; margin-top: 14px; }
-  #title-controls { margin-top: 30px; color: #8a7c62; font-size: 13px; line-height: 2; }
-  #title-controls b { color: #d6c8a8; font-weight: 600; }
-  .btn.ghost { background: rgba(232,220,192,.07); color: #e8dcc0; box-shadow: none;
-    border: 1px solid rgba(232,220,192,.25); }
-  .btn:disabled { background: #37302a; color: #7a6f5e; box-shadow: none; cursor: default; transform: none; }
+  /* 结局 */
+  #end-screen { position: absolute; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px; background: rgba(10,8,6,.72); }
+  #end-screen.show { display: flex; }
+  #end-title { color: #e8dcbe; font-size: 40px; letter-spacing: 14px; }
+  #end-text { color: #c9b98a; font-size: 19px; line-height: 2.2; text-align: center; letter-spacing: 2px; }
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="gl" width="1280" height="720"></canvas></div>
-<div id="vignette"></div>
-<div id="grain"></div>
-<div id="peek-fx"><div class="tint"></div><div class="scan"></div></div>
-<div id="peek-banner">十 分 钟 后 的 世 界</div>
-<div id="peek-tip">再按 F 回到「现在」</div>
+<div id="wrap"><div id="stage">
+  <canvas id="gl" width="1280" height="720"></canvas>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+  <div id="scan"></div>
 
-<div class="hud" id="room-label" style="display:none">雾之卧室<div id="room-sub">第一章 · 雾中宅邸</div></div>
-<div class="hud" id="topright" style="display:none">
-  <span id="hint-count"></span>
-  <button class="icon-btn" id="peek-btn" title="万花筒之瞳（F）">👁</button>
-  <button class="icon-btn" id="hint-btn" title="提示（H）">?</button>
-</div>
-
-<div id="cursor-tag"></div>
-
-<div id="dialog">
-  <div class="who"></div>
-  <div class="box"><div class="text"></div><div class="next">▼ 点击继续</div></div>
-</div>
-
-<div id="inv"></div>
-<div id="toast"></div>
-
-<div class="overlay-panel" id="end-screen">
-  <div class="panel-card">
-    <h2>第一章 · 完</h2>
-    <p id="end-text"></p>
-    <div class="small">《明日万花筒》第二章「困在昨天的小镇」· 敬请期待</div>
-    <button class="btn" id="end-restart">回到标题</button>
+  <div id="hud">
+    <div id="room-label"></div>
+    <div id="hud-right">
+      <div id="hearts">❤❤❤</div>
+      <div id="energy-wrap" title="瞳力"><div id="energy-fill"></div></div>
+      <button id="eye-btn" class="hbtn" title="万花筒之瞳（F）">👁</button>
+      <button id="hint-btn" class="hbtn" title="提示（H）">?</button>
+    </div>
+    <div id="peek-banner">里 世 界</div>
+    <div id="toast"></div>
+    <div id="inv"></div>
+    <div id="keyhelp">WASD 移动 · Shift 疾跑 · E 调查 · F 里世界 · Q 绷带 · M 声音</div>
   </div>
-</div>
 
-<div class="overlay-panel show" id="title-screen">
-  <div id="title-inner">
-    <div id="title-h1">明日万花筒</div>
-    <div id="title-h2">看得见十分钟后的独眼男孩 · 2D 手绘版 · 第一章 雾中宅邸</div>
-    <button class="btn" id="btn-start">开始新游戏</button><br/>
-    <button class="btn ghost" id="btn-continue" style="margin-top:14px">继续上次冒险</button>
-    <div id="title-controls">
-      <b>鼠标左键</b> 调查 / 使用物品 · <b>F</b> 万花筒之瞳（窥探十分钟后） · <b>H</b> 提示<br/>
-      窥探未来不消耗任何东西，大胆使用
+  <div id="dialog"><span id="dialog-name"></span><div id="dialog-text"></div></div>
+
+  <div id="end-screen">
+    <div id="end-title"></div>
+    <div id="end-text"></div>
+  </div>
+
+  <div id="title-screen" class="show">
+    <div id="title-name">明日万花筒</div>
+    <div id="title-sub">看得见里世界的独眼少年 · 2D 手绘版 · 全三章</div>
+    <button id="btn-new" class="tbtn">开始新的旅途</button>
+    <button id="btn-continue" class="tbtn disabled">继续上次冒险</button>
+    <div id="title-keys">
+      <b>WASD</b> 移动 · <b>Shift</b> 疾跑 · <b>E</b> 调查 · <b>F</b> 万花筒之瞳（窥见里世界）<br>
+      里世界藏着现实看不见的东西——也有一些「住客」。小心你的瞳力。
     </div>
   </div>
-</div>
-
+</div></div>
 <script>window.addEventListener('error', e => { document.title = 'ERR:' + e.message + ' @' + (e.filename||'').split('/').pop() + ':' + e.lineno; });</script>
-<script type="module" src="./js/game.js?v=11"></script>
+<script type="module" src="./js/game.js?v=20"></script>
+<script>
+  // 把 grain 画布挂进 DOM
+  window.addEventListener('load', () => setTimeout(() => {
+    const g = document.getElementById('grain');
+    if (g && !g.firstChild) { /* grain 由 game.js 生成后贴上 */ }
+  }, 100));
+</script>
 </body>
 </html>
