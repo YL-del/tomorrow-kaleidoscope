@@ -160,7 +160,16 @@ ROOMS.foyer = {
         else g.say(['大门纹丝不动。锁孔的位置空着一个圆洞——门把被人拆走了。']);
       } },
     { id: 'tobedroom', x: 140, y: 400, r: 70, name: '回卧室', act(F, g) { g.gotoRoom('bedroom'); } },
-    { id: 'tostudy', x: 1150, y: 400, r: 70, name: '书房', show: F => F.metDeer || true, act(F, g) { g.gotoRoom('study'); } },
+    { id: 'tostudy', x: 1150, y: 400, r: 70, name: '书房',
+      act(F, g) {
+        if (F.keySt || F.studyOpen) { F.studyOpen = true; g.gotoRoom('study'); }
+        else g.say(['书房门锁着，锁孔泛着铜色。二楼的水壶下面……好像压着什么。']);
+      } },
+    { id: 'tocellar', x: 120, y: 500, r: 70, name: '地窖暗门',
+      act(F, g) {
+        if (F.keyCellar) g.gotoRoom('cellar');
+        else g.say(['地板上一扇矮小的暗门，挂着一把粗重的铁锁。钥匙应该在哪里等着被找到。']);
+      } },
     { id: 'clock', x: 900, y: 400, r: 70, name: '落地钟',
       act(F, g) { g.say(['老式落地钟。指针停在 11:44。钟摆上有一圈烧灼的痕迹。', '阿堵：11 点 44 分……这个数字为什么这么耳熟？']); } },
     { id: 'coat', x: 180, y: 420, r: 60, name: '衣帽架', act(F, g) { g.say(['挂着一件小孩子的红色雨衣。不是你的尺码——但袖口绣着「堵」字。']); } },
@@ -202,6 +211,10 @@ ROOMS.foyer = {
     poly(ctx, [[160, 262], [200, 256], [204, 330], [158, 334]], { fill: '#a8403a', lw: 2.2, amp: .8, seed: 62 });
     // 红地毯
     poly(ctx, rrectPts(480, 430, 320, 220, 14), { fill: '#743a36', lw: 2.6, amp: 1.6, seed: 63, alpha: .92 });
+    // 地窖暗门（地板左下）
+    poly(ctx, [[70, 470], [170, 470], [178, 540], [62, 540]], { fill: '#4a3626', lw: 3, amp: 1.2, seed: 64 });
+    line(ctx, 70, 505, 170, 505, { lw: 2.2, seed: 65, stroke: '#2e2115' });
+    ell(ctx, 150, 522, 7, 5, { fill: '#c9a227', lw: 2, amp: .3, seed: 66 });
     // 鹿先生
     drawDeer(ctx, 420, 580, 1.05, t);
   },

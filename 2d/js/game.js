@@ -604,7 +604,7 @@ if (new URLSearchParams(location.search).get('autotest')) {
       step('writing', () => __act('writing'));
       step('books', () => { __act('b-gold'); __act('b-teal'); __act('b-crimson'); });
       step('world-off', () => { state.world = 'real'; });
-      step('cellar-in', () => { gotoRoom('cellar'); });
+      step('cellar-in', () => __act('tocellar'));
       step('matchbox', () => __act('matchbox'));
       step('handle-world', () => { state.world = 'other'; spawnMonsters(); __act('workbench'); });
       step('back-foyer', () => { state.world = 'real'; gotoRoom('foyer'); });
