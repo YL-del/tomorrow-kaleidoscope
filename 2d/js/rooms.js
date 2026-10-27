@@ -542,7 +542,7 @@ ROOMS.church = {
         if (!F.gotBellKey) { g.say(['钟楼的门锁着。锁孔是三叶草的形状。']); return; }
         g.ringBell();
       } },
-    { id: 'out', x: 100, y: 440, r: 95, name: '回长街', act(F, g) { g.gotoRoom('street'); } },
+    { id: 'out', x: 110, y: 460, r: 110, name: '回长街', act(F, g) { g.gotoRoom('street'); } },
   ],
   otherDecor(ctx, t, F) {
     // 彩窗下的影
@@ -585,6 +585,12 @@ ROOMS.church = {
     }
     // 钟楼门
     door(ctx, 1040, 360, 90, 190, { seed: 224, fill: '#4a3626' });
+    // 出口门（回长街）：敞开的门 + 门外天光洒进
+    door(ctx, 58, 370, 86, 195, { seed: 228, open: true });
+    ctx.save();
+    ctx.globalAlpha = .16;
+    poly(ctx, [[64, 368], [144, 368], [232, 512], [46, 512]], { fill: '#e8dcae', stroke: null, amp: 1, seed: 229 });
+    ctx.restore();
     // 长椅
     for (let i = 0; i < 3; i++) {
       poly(ctx, [[180 + i * 10, 560 + i * 40], [420 + i * 10, 560 + i * 40], [425 + i * 10, 585 + i * 40], [175 + i * 10, 585 + i * 40]], { fill: '#6e5138', lw: 2.2, amp: .9, seed: 225 + i, alpha: .95 });
