@@ -536,13 +536,13 @@ ROOMS.church = {
         F.candlesLit = true; F.gotBellKey = true; g.consumeItem('蜡烛'); g.save(); g.gainItem('钟楼钥匙');
         g.say(['老蜡落进烛台，三簇火苗同时立起。祭坛的暗格「咔」地弹开——', '获得了「钟楼钥匙」。']);
       } },
-    { id: 'belltower', x: 1080, y: 420, r: 80, name: '钟楼',
+    { id: 'belltower', x: 1080, y: 480, r: 95, name: '钟楼',
       act(F, g) {
         if (F.bellRung) { g.say(['钟还在轻轻嗡鸣。']); return; }
         if (!F.gotBellKey) { g.say(['钟楼的门锁着。锁孔是三叶草的形状。']); return; }
         g.ringBell();
       } },
-    { id: 'out', x: 100, y: 470, r: 70, name: '回长街', act(F, g) { g.gotoRoom('street'); } },
+    { id: 'out', x: 100, y: 440, r: 95, name: '回长街', act(F, g) { g.gotoRoom('street'); } },
   ],
   otherDecor(ctx, t, F) {
     // 彩窗下的影

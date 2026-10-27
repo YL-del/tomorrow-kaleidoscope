@@ -199,6 +199,7 @@ function updMonsters(dt) {
     if (m.dead) return;
     const dx = state.px - m.mx, dy = state.py - m.my;
     const dist = Math.hypot(dx, dy);
+    if (!isFinite(dist) || dist < 1) { m.mx = m.x; m.my = m.y; return; }
     m.cd = Math.max(0, m.cd - dt);
     if (m.type === 'nurse') {
       if (dist < 280) { m.mx += (dx / dist) * m.speed * dt; m.my += (dy / dist) * m.speed * dt; }
@@ -231,7 +232,15 @@ function updMonsters(dt) {
 function hurtPlayer(dx, dy) {
   state.hearts--; state.iframes = 1.6; state.hurtFx = .5;
   const d = Math.hypot(dx, dy) || 1;
-  state.px += dx / d * 90; state.py += dy / d * 90;
+  // 分步碰撞检测的击退：绝不让玩家嵌进墙里
+  const R = ROOMS[state.room];
+  for (let s = 0; s < 6; s++) {
+    const nx = state.px + dx / d * 15, ny = state.py + dy / d * 15;
+    if (collides(R, nx, ny)) break;
+    state.px = nx; state.py = ny;
+  }
+  state.px = Math.max(34, Math.min((R.W || 1280) - 34, state.px));
+  state.py = Math.max(FLOOR_TOP + 26, Math.min(FLOOR_BOT, state.py));
   stingSound();
   if (state.hearts <= 0) { death(); return; }
   toast('它碰到了你！剩余 ' + state.hearts + ' 颗心');
@@ -286,19 +295,32 @@ function updPlayer(dt) {
   }
   soot = soot.filter(p => { p.y += p.v * dt; p.x += Math.sin(p.y * .02) * 12 * dt; return p.y < VH + 10; });
 
+  // NaN 防护：坐标异常时复位到出生点
+  if (!isFinite(state.px) || !isFinite(state.py)) {
+    const R0 = ROOMS[state.room];
+    state.px = R0.spawn.x; state.py = R0.spawn.y;
+  }
+
   updMonsters(dt);
+}
+function collides(R, nx, ny) {
+  const hw = 13, hh = 10;
+  for (const [wx, wy, ww, wh] of (R.walls || [])) {
+    if (nx + hw > wx && nx - hw < wx + ww && ny + hh > wy && ny - hh < wy + wh) return true;
+  }
+  return !(nx > 30 && nx < (R.W || 1280) - 30 && ny > FLOOR_TOP + 24 && ny < FLOOR_BOT);
 }
 function moveCollide(dx, dy) {
   const R = ROOMS[state.room];
-  const hw = 13, hh = 10;
-  const tryMove = (nx, ny) => {
-    for (const [wx, wy, ww, wh] of (R.walls || [])) {
-      if (nx + hw > wx && nx - hw < wx + ww && ny + hh > wy && ny - hh < wy + wh) return false;
-    }
-    return nx > 30 && nx < (R.W || 1280) - 30 && ny > FLOOR_TOP + 24 && ny < FLOOR_BOT;
-  };
-  if (tryMove(state.px + dx, state.py)) state.px += dx;
-  if (tryMove(state.px, state.py + dy)) state.py += dy;
+  // 脱困模式：若当前已嵌在墙里，允许自由移动走出
+  if (collides(R, state.px, state.py)) {
+    state.px += dx; state.py += dy;
+    state.px = Math.max(34, Math.min((R.W || 1280) - 34, state.px));
+    state.py = Math.max(FLOOR_TOP + 26, Math.min(FLOOR_BOT, state.py));
+    return;
+  }
+  if (!collides(R, state.px + dx, state.py)) state.px += dx;
+  if (!collides(R, state.px, state.py + dy)) state.py += dy;
 }
 
 /* ---------- 交互 ---------- */
@@ -308,7 +330,7 @@ function nearestHotspot() {
   for (const h of (R.hotspots || [])) {
     if (h.show && !h.show(state.F)) continue;
     if (h.world === 'other' && state.world !== 'other') continue;
-    const d = Math.hypot(state.px - h.x, state.py - (h.y + 30));
+    const d = Math.hypot(state.px - h.x, state.py - h.y);
     if (d < h.r && d < bd) { bd = d; best = h; }
   }
   return best;
@@ -501,17 +523,21 @@ function drawTitle(t) {
 /* ---------- 主循环 ---------- */
 let last = 0;
 function loop(ts) {
+  requestAnimationFrame(loop);   // 先排下一帧：任何异常都不再冻结游戏
   const t = ts / 1000;
   const dt = Math.min(.05, t - (last || t));
   last = t;
-  if (state.scene === 'title') drawTitle(t);
-  else if (state.scene === 'play') { updPlayer(dt); drawScene(t, dt); }
-  else if (state.scene === 'end') { drawTitle(t * .4); }
-  // 颗粒
-  if (grain) { ctx.globalAlpha = .5; ctx.drawImage(grain, (t * 7) % 40 - 40, (t * 5) % 40 - 40, VW + 40, VH + 40); ctx.globalAlpha = 1; }
-  // HUD 刷新
-  if (state.scene === 'play') updateHUD();
-  requestAnimationFrame(loop);
+  try {
+    if (state.scene === 'title') drawTitle(t);
+    else if (state.scene === 'play') { updPlayer(dt); drawScene(t, dt); }
+    else if (state.scene === 'end') { drawTitle(t * .4); }
+    // 颗粒
+    if (grain) { ctx.globalAlpha = .5; ctx.drawImage(grain, (t * 7) % 40 - 40, (t * 5) % 40 - 40, VW + 40, VH + 40); ctx.globalAlpha = 1; }
+    // HUD 刷新
+    if (state.scene === 'play') updateHUD();
+  } catch (e) {
+    if (document.title.indexOf('ERR:') !== 0) document.title = 'ERR:' + e.message;
+  }
 }
 function updateHUD() {
   const h = $('#hearts');
@@ -616,8 +642,10 @@ if (new URLSearchParams(location.search).get('autotest')) {
       step('watch-world', () => { state.world = 'other'; spawnMonsters(); __act('watch'); state.world = 'real'; });
       step('shop', () => { gotoRoom('shop'); __act('cat'); });
       step('church', () => { gotoRoom('church'); __act('goat'); });
+      step('church-exit', () => { state.px = 110; state.py = 440; const h = nearestHotspot(); if (!h || h.id !== 'out') throw new Error('exit?' + (h && h.id)); interact(); if (state.room !== 'street') throw new Error('stuck:' + state.room); gotoRoom('church'); });
       step('statues', () => { state.F.statues = [1, 1, 1]; __act('statue0'); __act('statue1'); __act('statue2'); });
       step('candles', () => __act('candelabrum'));
+      step('bell-reach', () => { state.px = 1080; state.py = 470; const h = nearestHotspot(); if (!h || h.id !== 'belltower') throw new Error('bell?' + (h && h.id)); });
       step('bell', () => __act('belltower'));
       step('bridge', () => { gotoRoom('street'); state.F.bellRung = true; __act('bridge'); });
       step('lh1', () => { gotoRoom('lh1'); __act('deer2'); });
