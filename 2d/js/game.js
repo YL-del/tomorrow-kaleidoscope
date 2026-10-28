@@ -1,9 +1,9 @@
 /* game.js —— 《明日万花筒》2D 完整版引擎
    WASD 自由移动 · F 切换里世界 · E 调查 · 三章完整流程 */
 
-import { poly, ell, line, INK, PAL, hash, makeGrain, flame } from './art.js?v=23';
-import { drawBoy, drawNurse, drawLurker, drawCrawler, drawKaleidoEye } from './chars.js?v=23';
-import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=23';
+import { poly, ell, line, INK, PAL, hash, makeGrain, flame } from './art.js?v=24';
+import { drawBoy, drawNurse, drawLurker, drawCrawler, drawKaleidoEye } from './chars.js?v=24';
+import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=24';
 
 const $ = s => document.querySelector(s);
 const cv = $('#gl'), ctx = cv.getContext('2d');
