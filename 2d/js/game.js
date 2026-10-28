@@ -336,9 +336,10 @@ function nearestHotspot() {
   return best;
 }
 function interact() {
-  const h = nearestHotspot();
-  if (!h) { return; }
-  h.act(state.F, G);
+if (showing) return;          // 对话进行中不重复触发热点
+const h = nearestHotspot();
+if (!h) { return; }
+h.act(state.F, G);
 }
 function turnStatue(i) {
   const st = state.F.statues || (state.F.statues = [2, 0, 3]);
@@ -575,16 +576,25 @@ function startGame(fresh) {
 /* ---------- 输入 ---------- */
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
-  if (state.scene !== 'play') return;
-  if (e.code === 'KeyE' || e.code === 'Space') { e.preventDefault(); interact(); }
+if (state.scene !== 'play') return;
+if (e.code === 'KeyE' || e.code === 'Space') {
+e.preventDefault();
+if (showing) {
+// 对话进行中：先补全打字机，再逐行推进，不重复触发热点
+const el = $('#dialog-text');
+if (el.textContent.length < el._full.length) el.textContent = el._full;
+else nextDialog();
+return;
+}
+interact();
+}
   if (e.code === 'KeyF') { e.preventDefault(); toggleWorld(); }
   if (e.code === 'KeyH') showHint();
   if (e.code === 'KeyQ') {
     if (hasItem('绷带') && state.hearts < state.maxHearts) { consumeItem('绷带'); state.hearts++; toast('缠上绷带。感觉好些了。（' + state.hearts + '/' + state.maxHearts + '）'); }
     else if (hasItem('绷带')) toast('现在用不上。');
   }
-  if (e.code === 'KeyM') toggleMute();
-  if (showing && (e.code === 'KeyE' || e.code === 'Space')) { $('#dialog-text').textContent = $('#dialog-text')._full; }
+if (e.code === 'KeyM') toggleMute();
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 cv.addEventListener('click', e => {
