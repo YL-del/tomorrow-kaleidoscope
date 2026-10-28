@@ -86,6 +86,9 @@
   #end-screen.show { display: flex; }
   #end-title { color: #e8dcbe; font-size: 40px; letter-spacing: 14px; }
   #end-text { color: #c9b98a; font-size: 19px; line-height: 2.2; text-align: center; letter-spacing: 2px; }
+#end-next { display: none; margin-top: 6px; padding: 12px 34px; background: none; border: 1px solid rgba(216,196,138,.5); color: #e8dcbe;
+font-size: 18px; letter-spacing: 4px; cursor: pointer; font-family: inherit; }
+#end-next:hover { background: rgba(216,196,138,.14); }
 </style>
 </head>
 <body>
@@ -111,10 +114,11 @@
 
   <div id="dialog"><span id="dialog-name"></span><div id="dialog-text"></div></div>
 
-  <div id="end-screen">
-    <div id="end-title"></div>
-    <div id="end-text"></div>
-  </div>
+<div id="end-screen">
+<div id="end-title"></div>
+<div id="end-text"></div>
+<button id="end-next"></button>
+</div>
 
   <div id="title-screen" class="show">
     <div id="title-name">明日万花筒</div>
@@ -128,7 +132,7 @@
   </div>
 </div></div>
 <script>window.addEventListener('error', e => { document.title = 'ERR:' + e.message + ' @' + (e.filename||'').split('/').pop() + ':' + e.lineno; });</script>
-<script type="module" src="./js/game.js?v=25"></script>
+<script type="module" src="./js/game.js?v=26"></script>
 <script>
   // 把 grain 画布挂进 DOM
   window.addEventListener('load', () => setTimeout(() => {

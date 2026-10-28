@@ -399,8 +399,11 @@ ROOMS.street = {
         if (F.bellRung) g.startChapter3();
         else g.say(['浓雾在栈桥前堆成一堵墙，伸手进去就像伸进冷水。先让钟响起来。']);
       } },
-    { id: 'lake', x: 120, y: 600, r: 80, name: '湖边',
-      act(F, g) { g.say(['湖水漆黑平缓。水面倒映的镇子……比岸上的镇子多出好几栋房子。']); } },
+    { id: 'lake', x: 120, y: 600, r: 90, name: '湖边',
+      act(F, g) {
+        if (F.letterWritten) g.gotoRoom('post');
+        else g.say(['湖水漆黑平缓。水面倒映的镇子……比岸上的镇子多出好几栋房子。']);
+      } },
   ],
   otherDecor(ctx, t, F) {
     // 里世界长街：倾斜的电线杆与影
@@ -825,7 +828,12 @@ ROOMS.lhtop = {
         }
       } },
     { id: 'deer3', x: 950, y: 580, r: 90, name: '守塔人',
-      act(F, g) { g.say(['守塔人：纸、笔、墨都在你手里了。别替他们道歉，也别替自己——把想说的写下来就好。']); } },
+      act(F, g) {
+        if (F.ch5) { g.say(['守塔人：火又烧起来了。这一层上不去——除非用里世界的眼睛，从烧不掉的地方走。']); return; }
+        g.say(['守塔人：纸、笔、墨都在你手里了。别替他们道歉，也别替自己——把想说的写下来就好。']);
+      } },
+    { id: 'tofire', x: 640, y: 360, r: 90, name: '上行的火光', world: 'other', show: F => F.ch5,
+      act(F, g) { g.gotoRoom('fire1'); } },
   ],
   otherDecor(ctx, t, F) { },
   monsters: F => [],
@@ -853,6 +861,537 @@ ROOMS.lhtop = {
     drawDeer(ctx, 950, 600, 1.1, t);
     // 下楼口
     poly(ctx, [[1000, 560], [1120, 560], [1140, 700], [980, 700]], { fill: '#241c14', lw: 3, amp: 1.2, seed: 305 });
+  },
+};
+
+/* ============ 第四章：湖底的邮局 ============ */
+
+ROOMS.post = {
+  label: '湖底邮局 · 前厅', chapter: 4,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [180, 400, 240, 80], [640, 390, 300, 80], [1020, 400, 200, 80]],
+  spawn: { x: 150, y: 600 },
+  spawnFrom: { street: { x: 150, y: 600 }, sorting: { x: 150, y: 600 } },
+  hotspots: [
+    { id: 'counter', x: 790, y: 470, r: 90, name: '前台',
+      act(F, g) {
+        if (!F.badge) {
+          F.badge = true; g.save();
+          g.say(['柜台上蒙着薄薄的水藻。抽屉里压着一枚铜徽章——邮差的徽章，编号 00。', '00 是空位。是留给「还没来上班的人」的。', '获得了「邮差的徽章」。']);
+          g.gainItem('邮差的徽章');
+        } else g.say(['分拣室就在后面。徽章在胸口微微发烫，像是催促。']);
+      } },
+    { id: 'sortdoor', x: 1120, y: 470, r: 90, name: '分拣室', show: F => F.badge,
+      act(F, g) { g.gotoRoom('sorting'); } },
+    { id: 'out', x: 90, y: 560, r: 80, name: '回长街', act(F, g) { g.gotoRoom('street'); } },
+    { id: 'lettersea', x: 400, y: 560, r: 80, name: '成山的信袋',
+      act(F, g) { g.say(['成千上万封信袋从水里捞出来，堆到天花板。每一封的收件人都是同一个人。']); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 漂浮的信
+    for (let i = 0; i < 9; i++) {
+      const fx = 120 + (i * 149) % 1040, fy = 150 + (i * 97) % 220;
+      const sway = Math.sin(t * 1.4 + i) * 10;
+      poly(ctx, [[fx + sway, fy], [fx + sway + 34, fy - 4], [fx + sway + 36, fy + 20], [fx + sway + 2, fy + 24]], { fill: '#e8dcc0', lw: 1.6, amp: .6, seed: 505 + i, alpha: .8 });
+    }
+    // 柜台上方的眼睛
+    ctx.save(); ctx.globalAlpha = .5 + Math.sin(t * 2) * .25;
+    ell(ctx, 790, 300, 6, 7, { fill: '#e8e2d2', stroke: null, amp: .3, seed: 521 });
+    ctx.restore();
+  },
+  monsters: F => [],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#8fa3a0', stripe: '#839894', wain: '#3e5350', floor: '#5c7370', floorDark: '#4d6360', seed: 501 });
+    // 水渍线
+    for (let i = 0; i < 4; i++) line(ctx, 0, 380 + i * 26, 1280, 378 + i * 26, { lw: 2, seed: 502 + i, stroke: '#3e5350', alpha: .5 });
+    // 前台
+    furnitureShadow(ctx, 790, 500, 320);
+    poly(ctx, [[640, 410], [940, 410], [960, 500], [620, 500]], { fill: '#5a4a3a', lw: 3.2, amp: 1.2, seed: 503 });
+    poly(ctx, [[650, 400], [930, 400], [936, 412], [644, 412]], { fill: '#6a5846', lw: 2.2, amp: .8, seed: 504 });
+    // 信袋山
+    for (let i = 0; i < 5; i++) {
+      poly(ctx, [[330 + i * 18, 500 - i * 6], [460 + i * 10, 500 - i * 6], [466 + i * 10, 540 + i * 8], [324 + i * 18, 540 + i * 8]], { fill: i % 2 ? '#7a6a50' : '#6a5c44', lw: 2.4, amp: 1, seed: 506 + i });
+    }
+    // 分拣室门
+    door(ctx, 1070, 470, 96, 200, { seed: 512, open: true });
+  },
+};
+
+ROOMS.sorting = {
+  label: '湖底邮局 · 分拣室', chapter: 4,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [200, 380, 880, 70]],
+  spawn: { x: 1100, y: 560 },
+  spawnFrom: { post: { x: 1100, y: 560 }, well: { x: 1100, y: 560 } },
+  hotspots: [
+    { id: 'pileG', x: 320, y: 520, r: 80, name: '金邮戳的信', world: 'other', show: F => !(F.piles || []).includes('金'),
+      act(F, g) { g.sortPile('金'); } },
+    { id: 'pileQ', x: 640, y: 520, r: 80, name: '青邮戳的信', world: 'other', show: F => !(F.piles || []).includes('青'),
+      act(F, g) { g.sortPile('青'); } },
+    { id: 'pileF', x: 960, y: 520, r: 80, name: '绯邮戳的信', world: 'other', show: F => !(F.piles || []).includes('绯'),
+      act(F, g) { g.sortPile('绯'); } },
+    { id: 'doneroom', x: 640, y: 460, r: 80, name: '分拣台', show: F => !F.sorted,
+      act(F, g) { g.say(['三格分拣架：金、青、绯。有些信封上的邮戳，在现实里只是空白——得用另一只眼睛看。']); } },
+    { id: 'welldoor', x: 180, y: 480, r: 90, name: '深井水馆', show: F => F.sorted,
+      act(F, g) { g.gotoRoom('well'); } },
+    { id: 'out', x: 1180, y: 560, r: 80, name: '回前厅', act(F, g) { g.gotoRoom('post'); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 分拣架上方漂浮的三色邮戳
+    const cols = [['#c9a227', 320], ['#3f7a6a', 640], ['#8e3b32', 960]];
+    cols.forEach((c, i) => {
+      ctx.save(); ctx.globalAlpha = .35 + Math.sin(t * 2 + i * 2) * .15;
+      ell(ctx, c[1], 260, 26, 26, { fill: c[0], stroke: null, amp: 1, seed: 530 + i });
+      ctx.restore();
+    });
+  },
+  monsters: F => [],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#9a9284', stripe: '#8d8577', wain: '#4a4034', floor: '#6a6052', floorDark: '#5a5144', seed: 526 });
+    // 分拣长台
+    furnitureShadow(ctx, 640, 560, 760);
+    poly(ctx, [[260, 470], [1020, 470], [1040, 560], [240, 560]], { fill: '#6e5138', lw: 3.2, amp: 1.2, seed: 527 });
+    // 三格
+    [320, 640, 960].forEach((x, i) => {
+      poly(ctx, [[x - 70, 440], [x + 70, 440], [x + 76, 472], [x - 76, 472]], { fill: i === 0 ? '#8a7434' : i === 1 ? '#3f6a5c' : '#7a3a32', lw: 2.6, amp: .9, seed: 528 + i });
+      poly(ctx, [[x - 58, 448], [x + 58, 448], [x + 62, 468], [x - 62, 468]], { fill: '#e8dcc0', lw: 1.4, amp: .5, seed: 531 + i, alpha: .85 });
+    });
+    // 深井水馆门
+    door(ctx, 130, 480, 100, 210, { seed: 535, fill: '#3a4a48' });
+  },
+};
+
+ROOMS.well = {
+  label: '深井水馆', chapter: 4, dark: 'dim',
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [240, 390, 800, 80]],
+  spawn: { x: 1150, y: 580 },
+  spawnFrom: { sorting: { x: 1150, y: 580 }, boiler: { x: 1150, y: 580 } },
+  hotspots: [
+    { id: 'valve', x: 400, y: 470, r: 90, name: '锈死的总阀', world: 'other', show: F => !F.drained,
+      act(F, g) {
+        if (!g.hasItem('深井钥匙')) { g.say(['总阀被锁在铁壳里。锁孔是老式的黄铜十字——钥匙不在这儿。']); return; }
+        F.drained = true; g.save();
+        g.say(['深井钥匙转动。铁壳弹开，你抓住阀轮用尽全力——', '——整栋建筑深处传来一声悠长的、几乎像是叹息的水声。', '水位正在退去。']);
+      } },
+    { id: 'boilerdoor', x: 140, y: 480, r: 90, name: '锅炉房', show: F => F.drained,
+      act(F, g) { g.gotoRoom('boiler'); } },
+    { id: 'out', x: 1190, y: 560, r: 80, name: '回分拣室', act(F, g) { g.gotoRoom('sorting'); } },
+    { id: 'wellmouth', x: 640, y: 560, r: 80, name: '深井口',
+      act(F, g) { g.say(F.drained ? ['井已经干了。井壁上刻满了名字，一个摞着一个——最新的一行只有三个字：金、青、绯。'] : ['深井的水是黑的。水面偶尔鼓起一个泡，又瘪下去。']); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 井口渗出的烟
+    for (let i = 0; i < 4; i++) {
+      const py = 560 - ((t * 26 + i * 60) % 200);
+      ctx.save(); ctx.globalAlpha = .3 - py / 2600;
+      ell(ctx, 640 + Math.sin(t + i) * 14, py, 18, 8, { fill: '#3a3230', stroke: null, amp: 1, seed: 541 + i });
+      ctx.restore();
+    }
+  },
+  monsters: F => F.drained ? [] : [{ type: 'wraith', x: 640, y: 480, seed: 6, speed: 62 }],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#7a8078', stripe: '#6f756e', wain: '#39413c', floor: '#546058', floorDark: '#46524a', seed: 536 });
+    // 深井口
+    furnitureShadow(ctx, 640, 600, 220);
+    ell(ctx, 640, 580, 96, 34, { fill: '#2a302c', stroke: '#39413c', lw: 3.4, amp: 1.2, seed: 537 });
+    if (!F.drained) ell(ctx, 640, 578, 78, 25, { fill: '#181d1c', stroke: null, amp: .8, seed: 538 });
+    else ell(ctx, 640, 578, 78, 25, { fill: '#100c0a', stroke: null, amp: .8, seed: 538 });
+    // 总阀与铁壳
+    furnitureShadow(ctx, 400, 500, 160);
+    poly(ctx, [[330, 420], [470, 420], [486, 500], [314, 500]], { fill: '#4a4640', lw: 3.2, amp: 1.2, seed: 539 });
+    ell(ctx, 400, 460, 26, 26, { fill: '#6a5c44', lw: 3, amp: .8, seed: 540 });
+    line(ctx, 376, 460, 424, 460, { lw: 5, seed: 545, stroke: '#8a7a5c' });
+    line(ctx, 400, 436, 400, 484, { lw: 5, seed: 546, stroke: '#8a7a5c' });
+    if (!F.drained) { ell(ctx, 400, 484, 7, 7, { fill: '#c9a227', lw: 2, amp: .4, seed: 547 }); }
+    // 锅炉房门
+    door(ctx, 92, 480, 96, 200, { seed: 548, fill: '#4a3a30' });
+  },
+};
+
+ROOMS.boiler = {
+  label: '锅炉房', chapter: 5, dark: true,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [220, 390, 300, 80], [760, 390, 300, 80]],
+  spawn: { x: 1140, y: 600 },
+  spawnFrom: { well: { x: 1140, y: 600 }, feast: { x: 1140, y: 600 } },
+  hotspots: [
+    { id: 'letterbox', x: 640, y: 480, r: 100, name: '水底的邮筒', show: F => F.drained && !F.gotList,
+      act(F, g) {
+        F.gotList = true; g.save();
+        g.say(['水位退净的井底，立着一只绿色的邮筒。投递口卡着一封信——都没能寄出去。', '「金青绯的名单」：婚宴宾客三十七人。缺席一位，宴席不散。', '还有一封没有署名的信，信封上只有一行字：「读完再决定」。', '获得了「金青绯的名单」和「未寄出的信」。']);
+        g.gainItem('金青绯的名单'); g.gainItem('未寄出的信');
+      } },
+    { id: 'feastdoor', x: 120, y: 480, r: 90, name: '婚宴大厅', show: F => F.drained && F.gotList,
+      act(F, g) { g.gotoRoom('feast'); } },
+    { id: 'out', x: 1190, y: 560, r: 80, name: '回深井水馆', act(F, g) { g.gotoRoom('well'); } },
+    { id: 'furnace', x: 950, y: 470, r: 90, name: '熄灭的锅炉',
+      act(F, g) { g.say(['锅炉冷了很多年。炉膛深处塞满了没有烧完的信——都是寄往同一天的。']); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 炉膛里的余烬
+    for (let i = 0; i < 5; i++) {
+      ctx.save(); ctx.globalAlpha = .5 + Math.sin(t * 3 + i * 1.7) * .3;
+      ell(ctx, 910 + i * 22, 500 - i * 4, 5, 4, { fill: '#c9501e', stroke: null, amp: .6, seed: 550 + i });
+      ctx.restore();
+    }
+  },
+  monsters: F => [],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#6a5c4c', stripe: '#5f5244', wain: '#332b22', floor: '#4a4034', floorDark: '#3d342a', seed: 549 });
+    // 大锅炉
+    furnitureShadow(ctx, 950, 520, 240);
+    ell(ctx, 950, 440, 110, 96, { fill: '#5c4a3a', lw: 3.6, amp: 1.4, seed: 551 });
+    poly(ctx, [[880, 470], [1020, 470], [1030, 520], [870, 520]], { fill: '#4a3c30', lw: 3, amp: 1, seed: 552 });
+    ell(ctx, 950, 496, 42, 20, { fill: '#17110c', lw: 2.6, amp: .6, seed: 553 });
+    // 井底邮筒
+    furnitureShadow(ctx, 640, 520, 130);
+    poly(ctx, [[600, 420], [680, 420], [686, 520], [594, 520]], { fill: '#2f4a3c', lw: 3.2, amp: 1.2, seed: 554 });
+    poly(ctx, [[606, 414], [674, 414], [678, 426], [602, 426]], { fill: '#3c5c4c', lw: 2.4, amp: .8, seed: 555 });
+    line(ctx, 612, 448, 668, 448, { lw: 3, seed: 556, stroke: '#1c2a22' });
+    // 婚宴厅门
+    door(ctx, 74, 480, 92, 200, { seed: 557, fill: '#6a4a44' });
+  },
+};
+
+/* ============ 第五章：无面新郎 ============ */
+
+ROOMS.feast = {
+  label: '婚宴大厅', chapter: 5,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [200, 370, 880, 80]],
+  spawn: { x: 1150, y: 600 },
+  spawnFrom: { boiler: { x: 1150, y: 600 }, kitchen: { x: 1150, y: 600 }, crypt: { x: 1150, y: 600 } },
+  hotspots: [
+    { id: 'tables', x: 640, y: 520, r: 110, name: '长桌与座位牌',
+      act(F, g) { g.seatGuests(); } },
+    { id: 'candle', x: 640, y: 430, r: 90, name: '大烛台', world: 'other', show: F => F.seated && !F.groomDown,
+      act(F, g) { g.torch(); } },
+    { id: 'kitchdoor', x: 1060, y: 460, r: 90, name: '后厨', show: F => !F.ch5 || F.groomDown || F.seated,
+      act(F, g) { g.gotoRoom('kitchen'); } },
+    { id: 'cryptdoor', x: 180, y: 460, r: 90, name: '圣器室地下',
+      act(F, g) { g.gotoRoom('crypt'); } },
+    { id: 'cat3', x: 420, y: 600, r: 80, name: '猫掌柜', show: F => !F.t3,
+      act(F, g) {
+        F.t3 = true; g.save();
+        g.say(['猫掌柜缩在桌下，尾巴炸成一团刷子。', '猫掌柜：那位「新郎」……我给镇上所有人理过发，没有一张脸长成那样。他不是没脸——他是把脸留在了别处。', '（证词之三 · 猫掌柜）']);
+      } },
+    { id: 'out', x: 1190, y: 560, r: 80, name: '回锅炉房', show: F => !F.seated || F.groomDown,
+      act(F, g) { g.gotoRoom('boiler'); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 吊灯阴影里的宾客
+    for (let i = 0; i < 6; i++) {
+      const gx = 260 + i * 150;
+      ctx.save(); ctx.globalAlpha = .5 + Math.sin(t * 1.4 + i) * .2;
+      ell(ctx, gx, 300, 10, 14, { fill: '#1c1614', stroke: null, amp: .8, seed: 560 + i });
+      ctx.restore();
+    }
+    if (F.seated && !F.groomDown) {
+      // 主位上方的红纱
+      ctx.save(); ctx.globalAlpha = .3 + Math.sin(t * 2.4) * .15;
+      poly(ctx, [[560, 150], [720, 150], [700, 320], [580, 320]], { fill: '#8e3a44', stroke: null, amp: 2, seed: 569 });
+      ctx.restore();
+    }
+  },
+  monsters: F => (F.seated && !F.groomDown) ? [{ type: 'groom', x: 640, y: 420, seed: 9, speed: 82 }] : [],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#7a5c50', stripe: '#6f5248', wain: '#3c2c26', floor: '#5c443c', floorDark: '#4d3830', seed: 558 });
+    // 长桌
+    furnitureShadow(ctx, 640, 560, 700);
+    poly(ctx, [[300, 470], [980, 470], [1000, 560], [280, 560]], { fill: '#6e5138', lw: 3.4, amp: 1.2, seed: 559 });
+    poly(ctx, [[310, 458], [970, 458], [976, 472], [304, 472]], { fill: '#e8dcc0', lw: 2, amp: .6, seed: 561, alpha: .9 });
+    // 座位牌
+    for (let i = 0; i < 9; i++) {
+      const sx = 350 + i * 70;
+      poly(ctx, [[sx, 446], [sx + 16, 446], [sx + 18, 462], [sx - 2, 462]], { fill: '#f4ecd6', lw: 1.4, amp: .4, seed: 562 + i });
+    }
+    // 大烛台
+    furnitureShadow(ctx, 640, 470, 130);
+    poly(ctx, [[620, 400], [660, 400], [668, 470], [612, 470]], { fill: '#8a7a5c', lw: 3, amp: 1, seed: 570 });
+    for (let i = -1; i <= 1; i++) {
+      line(ctx, 640 + i * 26, 400, 640 + i * 26, 366, { lw: 4, seed: 571 + i + 1, stroke: '#c9b98a' });
+      flame(ctx, 640 + i * 26, 358, 1, 574 + i, t);
+    }
+    // 后厨门 / 圣器室门
+    door(ctx, 1010, 460, 100, 200, { seed: 577, fill: '#4a3a30' });
+    door(ctx, 130, 460, 100, 200, { seed: 578, fill: '#3c3a34' });
+    // 主位空椅
+    if (!F.seated) {
+      poly(ctx, [[600, 330], [680, 330], [688, 400], [592, 400]], { fill: '#5a4030', lw: 3, amp: 1, seed: 579 });
+    }
+    // 猫掌柜
+    drawCat(ctx, 420, 620, 1.05, t);
+  },
+};
+
+ROOMS.kitchen = {
+  label: '婚宴大厅 · 后厨', chapter: 5, dark: 'dim',
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [180, 390, 400, 80], [700, 390, 400, 80]],
+  spawn: { x: 1100, y: 580 },
+  spawnFrom: { feast: { x: 1100, y: 580 } },
+  hotspots: [
+    { id: 'hearth', x: 300, y: 470, r: 90, name: '冷灶膛',
+      act(F, g) { g.say(['灶膛冷透了。锅里的菜还是满的——一桌十人份，一口都没动过，已经馊了。']); } },
+    { id: 'deer2', x: 700, y: 500, r: 90, name: '鹿管家', world: 'other', show: F => !F.t1,
+      act(F, g) {
+        F.t1 = true; g.save();
+        g.say(['鹿管家立在里世界的后厨里，围裙系得一丝不苟。', '鹿管家：那天我端着汤走进大厅，看见主位上坐着的——是我自己。等我回头，客人全都不见了，只有喜糖撒了一地。', '鹿管家：先生，别看他的脸。你看了，他就会以为你是那个该来的人。', '（证词之一 · 鹿管家）']);
+      } },
+    { id: 'out', x: 1150, y: 560, r: 80, name: '回婚宴大厅', act(F, g) { g.gotoRoom('feast'); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 悬浮的刀
+    for (let i = 0; i < 4; i++) {
+      const kx = 220 + i * 240, ky = 240 + Math.sin(t * 1.8 + i * 2) * 10;
+      poly(ctx, [[kx, ky], [kx + 8, ky - 34], [kx + 14, ky]], { fill: '#b8b2a2', lw: 1.8, amp: .5, seed: 580 + i });
+    }
+  },
+  monsters: F => [{ type: 'nurse', x: 400, y: 520, seed: 3, speed: 58 }],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#8a8478', stripe: '#7e786c', wain: '#403a30', floor: '#5a5448', floorDark: '#4c463c', seed: 574 });
+    // 灶台
+    furnitureShadow(ctx, 300, 500, 320);
+    poly(ctx, [[150, 420], [470, 420], [490, 500], [130, 500]], { fill: '#55534c', lw: 3.2, amp: 1.2, seed: 575 });
+    ell(ctx, 230, 452, 34, 12, { fill: '#26221c', lw: 2.4, amp: .6, seed: 576 });
+    ell(ctx, 350, 452, 34, 12, { fill: '#26221c', lw: 2.4, amp: .6, seed: 577 });
+    // 大锅
+    furnitureShadow(ctx, 700, 530, 150);
+    ell(ctx, 700, 500, 62, 34, { fill: '#3a3a38', lw: 3, amp: 1, seed: 581 });
+    poly(ctx, [[660, 470], [740, 470], [734, 502], [666, 502]], { fill: '#4a4a46', lw: 2.6, amp: .8, seed: 582 });
+    // 案板与备菜
+    poly(ctx, [[880, 440], [1080, 440], [1092, 500], [868, 500]], { fill: '#6e5138', lw: 2.8, amp: 1, seed: 583 });
+    // 回门
+    door(ctx, 1100, 480, 96, 200, { seed: 584, open: true });
+  },
+};
+
+ROOMS.crypt = {
+  label: '圣器室地下', chapter: 5, dark: true,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [240, 400, 220, 70], [820, 400, 220, 70]],
+  spawn: { x: 150, y: 600 },
+  spawnFrom: { feast: { x: 150, y: 600 } },
+  hotspots: [
+    { id: 'rabbit', x: 640, y: 520, r: 100, name: '兔小姐', world: 'other', show: F => !F.t2,
+      act(F, g) {
+        F.t2 = true; g.save();
+        g.say(['兔小姐背对着你，坐在一口空棺上，耳朵垂着。', '兔小姐：婚礼是我操办的。宾客名单、座位、蜡烛……每一处都对，只有一件事我算错了——', '兔小姐：新娘那天根本没到。来的东西穿着她的裙子。我数座位的时候，多出来一个，怎么数都是多一个。', '（证词之二 · 兔小姐）']);
+      } },
+    { id: 'coffin', x: 300, y: 500, r: 90, name: '备用的棺',
+      act(F, g) { g.say(['棺是空的，但盖子内侧布满抓痕。抓痕从里向外。']); } },
+    { id: 'out', x: 90, y: 560, r: 80, name: '回婚宴大厅', act(F, g) { g.gotoRoom('feast'); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 墙缝里的烛火
+    for (let i = 0; i < 3; i++) flame(ctx, 200 + i * 440, 250, .8, 590 + i, t);
+  },
+  monsters: F => [{ type: 'crawler', x: 900, y: 520, seed: 5, speed: 96 }],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#5c564c', stripe: '#524d44', wain: '#2a2620', floor: '#3c3830', floorDark: '#312d26', seed: 585 });
+    // 一排壁龛
+    for (let i = 0; i < 5; i++) {
+      const nx = 180 + i * 220;
+      poly(ctx, [[nx, 220], [nx + 70, 220], [nx + 74, 300], [nx - 4, 300]], { fill: '#26221c', lw: 2.4, amp: .8, seed: 586 + i });
+    }
+    // 空棺
+    furnitureShadow(ctx, 300, 540, 260);
+    poly(ctx, [[180, 480], [420, 480], [440, 560], [160, 560]], { fill: '#4a3626', lw: 3.2, amp: 1.2, seed: 591 });
+    poly(ctx, [[196, 466], [404, 466], [410, 482], [190, 482]], { fill: '#5a4430', lw: 2.4, amp: .8, seed: 592 });
+    // 兔小姐
+    drawRabbit(ctx, 640, 560, 1.08, t);
+    // 石阶
+    poly(ctx, [[60, 560], [140, 560], [150, 700], [50, 700]], { fill: '#1c1710', lw: 3, amp: 1, seed: 593 });
+  },
+};
+
+/* ============ 第六章：火之夜 ============ */
+
+ROOMS.fire1 = {
+  label: '燃烧的家 · 客厅', chapter: 6,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [200, 390, 340, 80], [720, 390, 360, 80]],
+  spawn: { x: 160, y: 600 },
+  spawnFrom: { lhtop: { x: 160, y: 600 }, fire2: { x: 160, y: 600 } },
+  hotspots: [
+    { id: 'clock', x: 500, y: 480, r: 90, name: '停摆的座钟', world: 'other', show: F => !F.mem1,
+      act(F, g) { g.memory(1); } },
+    { id: 'stairs', x: 1080, y: 470, r: 90, name: '上楼的楼梯', world: 'other', show: F => F.mem1,
+      act(F, g) { g.gotoRoom('fire2'); } },
+    { id: 'out', x: 80, y: 560, r: 80, name: '回到灯塔', act(F, g) { g.gotoRoom('lhtop'); } },
+    { id: 'sofa', x: 850, y: 490, r: 80, name: '烧塌的沙发',
+      act(F, g) { g.say(['沙发的骨架还保持着有人坐过的形状。三坐垫，一大两小。']); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 火光在里世界凝成固定形状：烟悬浮
+    for (let i = 0; i < 5; i++) {
+      ctx.save(); ctx.globalAlpha = .25 + Math.sin(t * 1.6 + i * 2) * .1;
+      ell(ctx, 200 + i * 240, 160 + (i % 3) * 60, 40, 16, { fill: '#2a2220', stroke: null, amp: 1.4, seed: 600 + i });
+      ctx.restore();
+    }
+  },
+  monsters: F => [],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#6a5244', stripe: '#5f493c', wain: '#31241c', floor: '#4a382c', floorDark: '#3c2d22', seed: 596 });
+    // 燃烧的窗
+    [220, 620, 1020].forEach((wx, i) => {
+      poly(ctx, [[wx, 150], [wx + 130, 150], [wx + 134, 290], [wx - 4, 290]], { fill: '#c9501e', lw: 3, amp: 1.2, seed: 597 + i, alpha: .85 });
+      flame(ctx, wx + 65, 210, 1.2, 601 + i, t);
+    });
+    // 座钟
+    furnitureShadow(ctx, 500, 520, 140);
+    poly(ctx, [[452, 330], [548, 330], [562, 520], [438, 520]], { fill: '#4a3626', lw: 3.2, amp: 1.2, seed: 605 });
+    ell(ctx, 500, 390, 30, 30, { fill: '#e8dcc0', lw: 2.6, amp: .6, seed: 606 });
+    line(ctx, 500, 390, 500, 372, { lw: 2.6, seed: 607, stroke: '#2f2620' });
+    line(ctx, 500, 390, 514, 396, { lw: 2.6, seed: 608, stroke: '#2f2620' });
+    // 沙发
+    furnitureShadow(ctx, 850, 530, 280);
+    poly(ctx, [[720, 440], [980, 440], [1000, 530], [700, 530]], { fill: '#5c4a3a', lw: 3.2, amp: 1.2, seed: 609 });
+    poly(ctx, [[720, 440], [980, 440], [976, 412], [724, 412]], { fill: '#4c3c2e', lw: 2.6, amp: 1, seed: 610 });
+    // 楼梯
+    poly(ctx, [[1020, 560], [1140, 560], [1160, 700], [1000, 700]], { fill: '#241c14', lw: 3, amp: 1.2, seed: 611 });
+    // 余烬
+    for (let i = 0; i < 6; i++) {
+      const ex = (t * 30 + i * 210) % 1300, ey = 400 - (t * 40 + i * 90) % 320;
+      ctx.save(); ctx.globalAlpha = .6;
+      ell(ctx, ex, ey, 2.6, 2.6, { fill: '#e8913c', stroke: null, amp: .4, seed: 612 + i });
+      ctx.restore();
+    }
+  },
+};
+
+ROOMS.fire2 = {
+  label: '燃烧的家 · 琴房', chapter: 6,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [180, 400, 900, 70]],
+  spawn: { x: 160, y: 600 },
+  spawnFrom: { fire1: { x: 160, y: 600 }, fire3: { x: 160, y: 600 } },
+  hotspots: [
+    { id: 'piano', x: 640, y: 490, r: 110, name: '烧焦的钢琴', world: 'other', show: F => !F.mem2,
+      act(F, g) { g.memory(2); } },
+    { id: 'stairs', x: 1120, y: 500, r: 90, name: '只有里世界才有的楼梯', world: 'other', show: F => F.mem2,
+      act(F, g) { g.gotoRoom('fire3'); } },
+    { id: 'out', x: 80, y: 560, r: 80, name: '回客厅', act(F, g) { g.gotoRoom('fire1'); } },
+    { id: 'scores', x: 300, y: 500, r: 80, name: '散落的琴谱',
+      act(F, g) { g.say(['琴谱铺了一地。每一页的同一小节都被圈了出来——一个休止符。']); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 琴键浮在空中
+    for (let i = 0; i < 10; i++) {
+      const kx = 320 + i * 64, ky = 250 + Math.sin(t * 2 + i * .9) * 12;
+      poly(ctx, [[kx, ky], [kx + 44, ky], [kx + 44, ky + 18], [kx, ky + 18]], { fill: i % 3 === 1 ? '#1c1614' : '#e8dcc0', lw: 1.6, amp: .5, seed: 620 + i, alpha: .85 });
+    }
+  },
+  monsters: F => [],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#705448', stripe: '#654b40', wain: '#332520', floor: '#4c382e', floorDark: '#3e2d24', seed: 615 });
+    // 立式钢琴
+    furnitureShadow(ctx, 640, 540, 340);
+    poly(ctx, [[460, 330], [820, 330], [840, 540], [440, 540]], { fill: '#241a12', lw: 3.6, amp: 1.4, seed: 616 });
+    poly(ctx, [[480, 420], [800, 420], [806, 452], [474, 452]], { fill: '#e8dcc0', lw: 2, amp: .6, seed: 617 });
+    for (let i = 0; i < 14; i++) line(ctx, 486 + i * 22, 420, 486 + i * 22, 452, { lw: 1.4, seed: 618 + i, stroke: '#2f2620', alpha: .7 });
+    poly(ctx, [[480, 452], [800, 452], [804, 470], [476, 470]], { fill: '#2f2620', lw: 2, amp: .5, seed: 632 });
+    // 烧塌的谱架
+    poly(ctx, [[260, 440], [340, 440], [348, 500], [252, 500]], { fill: '#3c2d22', lw: 2.8, amp: 1, seed: 633 });
+    // 里世界楼梯（现实里没有）
+    poly(ctx, [[1060, 480], [1180, 480], [1200, 700], [1040, 700]], { fill: '#241c14', lw: 3, amp: 1.2, seed: 634 });
+    // 火光
+    flame(ctx, 160, 300, 1.1, 635, t); flame(ctx, 1000, 250, 1, 636, t);
+  },
+};
+
+ROOMS.fire3 = {
+  label: '燃烧的家 · 儿童房', chapter: 6, dark: 'dim',
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720], [200, 400, 880, 70]],
+  spawn: { x: 160, y: 600 },
+  spawnFrom: { fire2: { x: 160, y: 600 }, eyeshrine: { x: 160, y: 600 } },
+  hotspots: [
+    { id: 'kaleido', x: 640, y: 490, r: 100, name: '小小的万花筒', world: 'other', show: F => !F.mem3,
+      act(F, g) { g.memory(3); } },
+    { id: 'up', x: 1120, y: 500, r: 90, name: '向上的光', world: 'other', show: F => F.mem3,
+      act(F, g) { g.gotoRoom('eyeshrine'); } },
+    { id: 'out', x: 80, y: 560, r: 80, name: '回琴房', act(F, g) { g.gotoRoom('fire2'); } },
+    { id: 'bed', x: 350, y: 510, r: 80, name: '小床',
+      act(F, g) { g.say(['床铺整理得整整齐齐。枕头下面压着一幅蜡笔画：三个大人牵着一个孩子，站在一座灯塔下面。']); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 玩具悬浮
+    for (let i = 0; i < 4; i++) {
+      const tx = 300 + i * 200, ty = 230 + Math.sin(t * 1.7 + i) * 10;
+      ell(ctx, tx, ty, 12, 12, { fill: i % 2 ? '#8e3a44' : '#3f6a5c', lw: 2, amp: .6, seed: 640 + i, alpha: .8 });
+    }
+  },
+  monsters: F => [],
+  draw(ctx, t, F) {
+    shell(ctx, 1280, { wall: '#7a6050', stripe: '#6f5646', wain: '#3a2c22', floor: '#54402f', floorDark: '#453425', seed: 637 });
+    // 小床
+    furnitureShadow(ctx, 350, 550, 260);
+    poly(ctx, [[220, 460], [480, 460], [496, 550], [204, 550]], { fill: '#5c4a3a', lw: 3.2, amp: 1.2, seed: 638 });
+    poly(ctx, [[230, 446], [470, 446], [476, 464], [224, 464]], { fill: '#e8dcc0', lw: 2, amp: .5, seed: 639 });
+    // 矮柜与万花筒
+    furnitureShadow(ctx, 640, 520, 200);
+    poly(ctx, [[560, 440], [720, 440], [732, 520], [548, 520]], { fill: '#6e5138', lw: 3, amp: 1.1, seed: 641 });
+    poly(ctx, [[612, 414], [668, 414], [672, 442], [608, 442]], { fill: '#8e3a44', lw: 2.6, amp: .7, seed: 642 });
+    // 天窗的光
+    poly(ctx, [[1040, 200], [1180, 200], [1190, 320], [1030, 320]], { fill: '#d8cba0', lw: 3, amp: 1, seed: 643, alpha: .8 });
+    for (let i = 0; i < 5; i++) line(ctx, 1045 + i * 30, 205, 1040 + i * 34, 315, { lw: 2, seed: 644 + i, stroke: '#b8a878', alpha: .5 });
+    // 向上的光梯
+    poly(ctx, [[1060, 480], [1180, 480], [1200, 700], [1040, 700]], { fill: '#c9b98a', lw: 3, amp: 1.2, seed: 649, alpha: .35 });
+    // 火光渐弱
+    flame(ctx, 100, 320, .8, 650, t);
+  },
+};
+
+ROOMS.eyeshrine = {
+  label: '眼之匣', chapter: 6, dark: true,
+  walls: [[0, 0, 40, 720], [1240, 0, 40, 720]],
+  spawn: { x: 640, y: 620 },
+  spawnFrom: { fire3: { x: 640, y: 620 } },
+  hotspots: [
+    { id: 'read', x: 340, y: 470, r: 90, name: '把信念出来', show: F => !F.cRead,
+      act(F, g) { g.choose('read'); } },
+    { id: 'burn', x: 340, y: 600, r: 90, name: '把信烧掉', show: F => !F.cBurn,
+      act(F, g) { g.choose('burn'); } },
+    { id: 'return', x: 940, y: 470, r: 90, name: '把眼睛还回去', world: 'other', show: F => !F.cReturn,
+      act(F, g) { g.choose('return'); } },
+    { id: 'keep', x: 940, y: 600, r: 90, name: '把眼睛留下', world: 'other', show: F => !F.cKeep,
+      act(F, g) { g.choose('keep'); } },
+    { id: 'shrine', x: 640, y: 380, r: 110, name: '眼之匣',
+      act(F, g) { g.finishCh6(); } },
+    { id: 'out', x: 640, y: 680, r: 70, name: '回儿童房', act(F, g) { g.gotoRoom('fire3'); } },
+  ],
+  otherDecor(ctx, t, F) {
+    // 匣上方的巨大闭目
+    ctx.save(); ctx.globalAlpha = .4 + Math.sin(t * 1.2) * .12;
+    line(ctx, 540, 190, 640, 178, { lw: 4, seed: 651, stroke: '#c9b98a' });
+    line(ctx, 640, 178, 740, 190, { lw: 4, seed: 652, stroke: '#c9b98a' });
+    ctx.restore();
+  },
+  monsters: F => [],
+  draw(ctx, t, F) {
+    // 纯黑的殿堂，只有中央的匣
+    ctx.fillStyle = '#14100c'; ctx.fillRect(0, 0, 1280, 720);
+    // 地面圆环
+    for (let i = 0; i < 3; i++) ell(ctx, 640, 500, 300 - i * 70, 90 - i * 20, { fill: null, stroke: '#3a3026', lw: 2.4, amp: 1, seed: 653 + i });
+    // 石台
+    furnitureShadow(ctx, 640, 480, 220);
+    poly(ctx, [[540, 420], [740, 420], [760, 490], [520, 490]], { fill: '#3a3026', lw: 3.2, amp: 1.1, seed: 656 });
+    // 眼之匣
+    poly(ctx, [[590, 350], [690, 350], [700, 420], [580, 420]], { fill: '#241c14', lw: 3.2, amp: .9, seed: 657 });
+    ell(ctx, 640, 386, 26, 15, { fill: '#c9b98a', lw: 2.4, amp: .5, seed: 658 });
+    // 烛台（决定之火）
+    furnitureShadow(ctx, 340, 500, 130);
+    line(ctx, 340, 470, 340, 420, { lw: 5, seed: 659, stroke: '#c9b98a' });
+    flame(ctx, 340, 412, 1.1, 660, t);
+    furnitureShadow(ctx, 340, 620, 130);
+    line(ctx, 340, 600, 340, 550, { lw: 5, seed: 661, stroke: '#c9b98a' });
+    flame(ctx, 340, 542, 1.1, 662, t);
+    // 眼睛基座
+    furnitureShadow(ctx, 940, 500, 130);
+    poly(ctx, [[900, 450], [980, 450], [990, 500], [890, 500]], { fill: '#2c241c', lw: 2.8, amp: .9, seed: 663 });
+    drawKaleidoEye(ctx, 940, 430, 17, { spin: t * .8 });
+    furnitureShadow(ctx, 940, 620, 130);
+    poly(ctx, [[900, 580], [980, 580], [990, 630], [890, 630]], { fill: '#2c241c', lw: 2.8, amp: .9, seed: 664 });
+    drawKaleidoEye(ctx, 940, 560, 17, { spin: t * .8, other: true });
+    // 星点
+    for (let i = 0; i < 14; i++) {
+      const sx = (i * 197) % 1200 + 40, sy = (i * 131) % 300 + 40;
+      ctx.save(); ctx.globalAlpha = .3 + Math.sin(t * 2 + i) * .2;
+      ell(ctx, sx, sy, 2, 2, { fill: '#c9b98a', stroke: null, amp: .3, seed: 665 + i });
+      ctx.restore();
+    }
   },
 };
 

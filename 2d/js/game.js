@@ -1,9 +1,9 @@
 /* game.js —— 《明日万花筒》2D 完整版引擎
    WASD 自由移动 · F 切换里世界 · E 调查 · 三章完整流程 */
 
-import { poly, ell, line, INK, PAL, hash, makeGrain, flame } from './art.js?v=24';
-import { drawBoy, drawNurse, drawLurker, drawCrawler, drawKaleidoEye } from './chars.js?v=24';
-import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=24';
+import { poly, ell, line, INK, PAL, hash, makeGrain, flame } from './art.js?v=26';
+import { drawBoy, drawNurse, drawLurker, drawCrawler, drawKaleidoEye, drawWraith, drawGroom } from './chars.js?v=26';
+import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=26';
 
 const $ = s => document.querySelector(s);
 const cv = $('#gl'), ctx = cv.getContext('2d');
@@ -76,13 +76,24 @@ const HINTS = {
   study: '先主的肖像提示了顺序。用 F 看看墙上。', cellar: '里世界的工作台上放着你需要的东西……但里面有东西在巡逻。',
   street: '分别探访三栋房子。钟响，雾散。', shop: '猫掌柜收旧物——越舍不得的越好。',
   church: '三圣像齐望圣坛，再点三支老蜡。', clinic: '有些东西要用里世界的眼睛才看得见。小心护士。',
-  lh1: '每层楼都有一道里世界的闸杆。', lh2: '小心爬行之物——它很快。', lh3: '最后一层。纸就在里世界的桌上。',
-  lhtop: '把信写完。',
+lh1: '每层楼都有一道里世界的闸杆。', lh2: '小心爬行之物——它很快。', lh3: '最后一层。纸就在里世界的桌上。',
+lhtop: '把信写完。',
+post: '湖水退了，但邮局里还是老样子。先在前台拿到能证明身份的东西。',
+sorting: '金、青、绯——三堆信，一封封分拣。有些邮戳要用里世界的眼睛才看得见。',
+well: '深井水馆。有什么东西在黑暗里走着——你不动，它就看不见你。',
+boiler: '阀门在里世界才能扳动。把水放干。',
+feast: '一场永远差一位宾客的婚宴。名单和证词都齐了才能排座。',
+kitchen: '后厨的灶膛是冷的。鹿管家在里世界留着没说完的话。',
+crypt: '圣器室的地下，兔小姐守着她搞砸的那个夜晚。',
+fire1: '现实在燃烧，里世界反而安全。父亲的钟停在 11:47。',
+fire2: '母亲的钢琴。上楼的楼梯只在里世界存在。',
+fire3: '妹妹的万花筒。上去，别回头。',
+eyeshrine: '两个决定：信，和眼睛。做完之后，走向眼之匣。',
 };
 function showHint() { toast('提示：' + (HINTS[state.room] || '按 F 切换里世界看看。')); }
 
 /* ---------- 物品 ---------- */
-const ITEM_ICON = { '火柴': '🜂', '铜钥匙': '🗝', '地窖钥匙': '🗝', '大门门把': '⚬', '银怀表': '⏱', '蜡烛': '🕯', '绷带': '➕', '旧钢笔': '✒', '墨水': '🖋', '信纸': '📄', '钟楼钥匙': '🗝' };
+const ITEM_ICON = { '火柴': '🜂', '铜钥匙': '🗝', '地窖钥匙': '🗝', '大门门把': '⚬', '银怀表': '⏱', '蜡烛': '🕯', '绷带': '➕', '旧钢笔': '✒', '墨水': '🖋', '信纸': '📄', '钟楼钥匙': '🗝', '邮差的徽章': '🎖', '深井钥匙': '🗝', '金青绯的名单': '📜', '未寄出的信': '✉', '婚宴请柬': '💌' };
 function refreshInv() {
   const el = $('#inv'); el.innerHTML = '';
   state.inv.forEach(k => {
@@ -111,18 +122,21 @@ function load() {
 }
 
 /* ---------- 房间切换 ---------- */
+const CH_NAMES = ['雾中宅邸', '困在昨天的小镇', '写给昨天的信', '湖底的邮局', '无面新郎', '火之夜'];
+const CH_NUM = ['一', '二', '三', '四', '五', '六'];
 function gotoRoom(room) {
-  const R = ROOMS[room];
-  const prev = state.room;
-  state.room = room;
-  state.chapter = R.chapter || state.chapter;
-  if (state.world === 'other') { state.world = 'real'; syncWorldUI(); }
-  const sp = (R.spawnFrom && R.spawnFrom[prev]) || R.spawn;
-  state.px = sp.x; state.py = sp.y; state.facing = 'down';
-  spawnMonsters();
-  $('#room-label').innerHTML = R.label + `<div id="room-sub">第${['一', '二', '三'][state.chapter - 1]}章 · ${['雾中宅邸', '困在昨天的小镇', '写给昨天的信'][state.chapter - 1]}</div>`;
-  state.trans = 1;
-  save();
+const R = ROOMS[room];
+const prev = state.room;
+state.room = room;
+state.chapter = R.chapter || state.chapter;
+if (state.world === 'other') { state.world = 'real'; syncWorldUI(); }
+const sp = (R.spawnFrom && R.spawnFrom[prev]) || R.spawn;
+state.px = sp.x; state.py = sp.y; state.facing = 'down';
+spawnMonsters();
+const ci = Math.min(6, Math.max(1, state.chapter)) - 1;
+$('#room-label').innerHTML = R.label + `<div id="room-sub">第${CH_NUM[ci]}章 · ${CH_NAMES[ci]}</div>`;
+state.trans = 1;
+save();
 }
 function spawnMonsters() {
   const R = ROOMS[state.room];
@@ -183,28 +197,142 @@ function writeLetter() {
     '今天我看清了。你们在笑。',
     '明天我会走出这座塔，替所有人看一下后天。灯会重新亮起来——这一次，是给活人点的。」',
     '——写完了。窗外的天，正一点一点亮起来。',
-  ], () => { state.scene = 'end'; showEnd(); });
+  ], () => showEnd());
 }
-function showEnd() {
+function showEnd(title, text) {
+  state.scene = 'end';
   $('#end-screen').classList.add('show');
-  $('#end-title').textContent = '雾 尽 · 完';
-  $('#end-text').innerHTML = '雾散尽之后，<br>湖对岸的小镇——<br>今天终于建成了。<br><br>阿堵走出灯塔，走进他看见过的明天。<br><br><span style="opacity:.55">《明日万花筒》全三章 · 完</span>';
+  $('#end-title').textContent = title || '雾 尽';
+  $('#end-text').innerHTML = text || ('雾散尽之后，<br>湖对岸的小镇——<br>今天终于建成了。<br><br>阿堵走出灯塔，走进他看见过的明天。<br><br><span style="opacity:.55">《明日万花筒》第三章 · 完</span>');
+  const btn = $('#end-next');
+  if (btn) {
+    if (!text && state.F.letterWritten) {
+      btn.style.display = 'inline-block';
+      btn.textContent = '第四章 · 湖底的邮局 →';
+      btn.onclick = () => startChapter4();
+    } else btn.style.display = 'none';
+  }
+}
+function startChapter4() {
+  $('#end-screen').classList.remove('show');
+  state.scene = 'play';
+  state.chapter = 4;
+  state.hearts = state.maxHearts; state.energy = 100; state.world = 'real'; syncWorldUI();
+  gotoRoom('street');
+  say(['第二天。湖水退了。', '长街尽头，露出一座从没人见过的建筑——湖底的邮局。', '全镇寄往「明天」的信，都堆在那里。没有一封被投递过。'], () => { save(); toast('湖边出现了新的入口。'); });
+}
+function burnHurt() {
+  state.hearts--; state.iframes = 1.2; state.hurtFx = .6;
+  stingSound();
+  if (state.hearts <= 0) { death(); return; }
+  toast('火舌舔上了你！快躲进里世界！（剩余 ' + state.hearts + ' 颗心）');
+}
+
+/* ---------- 第四至六章：邮局与眼之匣 ---------- */
+function sortPile(color) {
+  const F = state.F;
+  F.piles = F.piles || [];
+  if (!F.piles.includes(color)) { F.piles.push(color); toast('分拣了「' + color + '」邮戳的信（' + F.piles.length + '/3）'); }
+  if (F.piles.length >= 3 && !F.sorted) {
+    F.sorted = true; save();
+    say(['最后一封信归位的瞬间，整间分拣室像是松了一口气。', '柜门弹开——里面是一把黄铜钥匙，牌子上写着：深井。'], () => gainItem('深井钥匙'));
+  }
+}
+function seatGuests() {
+  const F = state.F;
+  if (F.seated) return;
+  if (!(hasItem('金青绯的名单') && F.t1 && F.t2 && F.t3)) {
+    say(['座位牌空着，主位的椅子比别处都旧。', '你还需要：' + [
+      !hasItem('金青绯的名单') ? '「金青绯的名单」' : null,
+      !F.t1 ? '鹿管家的证词' : null,
+      !F.t2 ? '兔小姐的证词' : null,
+      !F.t3 ? '猫掌柜的证词' : null,
+    ].filter(Boolean).join('、') + '。']);
+    return;
+  }
+  F.seated = true; save(); spawnMonsters();
+  say([
+    '你按名单把座位牌一一摆好。金、青、绯——最后一张，写着「阿堵」。',
+    '宾客们陆续入座。只有主位空着。',
+    '——音乐停了。一位穿白色礼服的「人」从廊柱后走向主位，头上罩着新娘的头纱。',
+  ]);
+  toast('无面新郎出现了！把它引到烛台边，然后点燃它！（站在烛台旁按 E）');
+}
+function torch() {
+  const F = state.F;
+  const groom = monsters.find(m => m.type === 'groom' && !m.dead);
+  if (!groom) { toast('烛台的火安静地烧着。'); return; }
+  if (Math.hypot(groom.mx - 640, groom.my - 430) < 230) {
+    groom.dead = true; F.groomDown = true; F.ch5 = true; save();
+    say(['你碰倒了烛台。火顺着头纱爬了上去——', '无面新郎在火里安静地鞠了一躬，散成了灰。', '灰烬里留着一张请柬。收件人：阿堵。'], () => gainItem('婚宴请柬'));
+    toast('灯塔顶层的方向传来钟声。回去看看。');
+  } else toast('它离烛台太远——先把它引过来！');
+}
+function memory(k) {
+  const F = state.F;
+  if (F['mem' + k]) return;
+  F['mem' + k] = true; save();
+  const lines = {
+    1: ['父亲的怀表停在 11:47。表盖内侧刻着：给阿堵，等你长到能修好它。', '（记忆之一 · 金）'],
+    2: ['母亲的钢琴只剩三个键还能响。琴谱翻开的那页是首摇篮曲，指尖印着烧焦的痕迹。', '（记忆之二 · 青）'],
+    3: ['妹妹的万花筒。你转开它——里面的碎片拼成的，是你现在这只眼睛的模样。', '（记忆之三 · 绯）你的眼睛，是她的眼睛。'],
+  };
+  say(lines[k]);
+}
+function choose(k) {
+  const F = state.F;
+  if (k === 'read') { F.cRead = true; F.cBurn = false; say(['你把那封「致昨天」贴在胸口。决定把它读给应该听到的人。']); }
+  else if (k === 'burn') { F.cBurn = true; F.cRead = false; say(['火苗舐上信角。你松开了手。', '有些话，烧掉比说出来干净。']); }
+  else if (k === 'return') { F.cReturn = true; F.cKeep = false; say(['你决定把这只眼睛还回去。看了一路的风景，该物归原主了。']); }
+  else { F.cKeep = true; F.cReturn = false; say(['你握紧了眼睛。这是妹妹给你的礼物，也是你的路。']); }
+  save();
+}
+function finishCh6() {
+  const F = state.F;
+  if (!(F.cRead || F.cBurn) || !(F.cReturn || F.cKeep)) { say(['眼之匣还没打开。先做完两个决定：信，和眼睛。']); return; }
+  let title, text;
+  if (F.cBurn) {
+    title = '邮局的最后一天 · 完';
+    text = '你烧掉了信。湖底的邮局在火里塌成平地，<br>所有寄往昨天的信，终于都送到了。<br><br>阿堵转身走回岸上。身后没有灯，前面也没有。<br>但他走了过去。<br><br><span style="opacity:.55">《明日万花筒》全六章 · 完</span>';
+  } else if (F.cReturn) {
+    title = '明天见 · 完';
+    text = '你把眼睛放回眼之匣。<br>黑夜里，小镇的每一扇窗次第亮起——<br>金、青、绯，三盏灯，替你看着明天。<br><br>「明天见。」阿堵说。<br>这一次，他听见了回答。<br><br><span style="opacity:.55">《明日万花筒》全六章 · 完</span>';
+  } else {
+    title = '独眼的守望者 · 完';
+    text = '你留下了眼睛，也留下了那份注视。<br>小镇醒了，而镇上多出了一个影子：<br>每个迷路的人都会遇见一个独眼的少年，<br>他说：别怕，我看得见你回家的路。<br><br><span style="opacity:.55">《明日万花筒》全六章 · 完</span>';
+  }
+  showEnd(title, text);
 }
 
 /* ---------- 怪物 AI ---------- */
 function updMonsters(dt) {
   if (state.world !== 'other') return;
   const R = ROOMS[state.room];
-  monsters.forEach(m => {
-    if (m.dead) return;
-    const dx = state.px - m.mx, dy = state.py - m.my;
+monsters.forEach(m => {
+if (m.dead) return;
+const pmx = m.mx, pmy = m.my;
+const dx = state.px - m.mx, dy = state.py - m.my;
     const dist = Math.hypot(dx, dy);
     if (!isFinite(dist) || dist < 1) { m.mx = m.x; m.my = m.y; return; }
     m.cd = Math.max(0, m.cd - dt);
-    if (m.type === 'nurse') {
-      if (dist < 280) { m.mx += (dx / dist) * m.speed * dt; m.my += (dy / dist) * m.speed * dt; }
-      else { m.wt += dt; m.mx += Math.sin(m.wt * .8 + m.seed) * 22 * dt; m.my += Math.cos(m.wt * .6 + m.seed) * 22 * dt; }
-    } else if (m.type === 'lurker') {
+if (m.type === 'nurse') {
+if (dist < 280) { m.mx += (dx / dist) * m.speed * dt; m.my += (dy / dist) * m.speed * dt; }
+else { m.wt += dt; m.mx += Math.sin(m.wt * .8 + m.seed) * 22 * dt; m.my += Math.cos(m.wt * .6 + m.seed) * 22 * dt; }
+} else if (m.type === 'wraith') {
+// 焚骸者：永远追踪——但你不站稳就几乎看不见它
+if (dist > 24) { m.mx += (dx / dist) * m.speed * dt; m.my += (dy / dist) * m.speed * dt; }
+} else if (m.type === 'groom') {
+if (m.lunge > 0) {
+m.lunge -= dt; m.mx += m.lvx * dt; m.my += m.lvy * dt;
+} else {
+m.mx += (dx / dist) * m.speed * dt; m.my += (dy / dist) * m.speed * dt;
+if (dist < 170 && m.cd <= 0) {
+m.lunge = .4; m.cd = 2.4;
+const gs = 340; m.lvx = dx / dist * gs; m.lvy = dy / dist * gs;
+toast('无面新郎伸出了手——');
+}
+}
+} else if (m.type === 'lurker') {
       if (m.lunge > 0) {
         m.lunge -= dt; m.mx += m.lvx * dt; m.my += m.lvy * dt;
       } else if (dist < (m.range || 320)) {
@@ -227,6 +355,9 @@ function updMonsters(dt) {
     m.my = Math.max(FLOOR_TOP + 20, Math.min(FLOOR_BOT, m.my));
     // 伤害
     if (dist < 38 && state.iframes <= 0) hurtPlayer(dx, dy);
+    // 迈步相位：按实际位移驱动（护士/焚骸者/新郎走路动画）
+    const moved = Math.hypot(m.mx - pmx, m.my - pmy);
+    m.walk = moved > .3 ? (m.walk || 0) + dt * 9 : 0;
   });
 }
 function hurtPlayer(dx, dy) {
@@ -246,11 +377,15 @@ function hurtPlayer(dx, dy) {
   toast('它碰到了你！剩余 ' + state.hearts + ' 颗心');
 }
 function death() {
-  say(['眼前一黑。', '……', '你在原地醒来。那只眼睛还在，火也还在烧。故事还没有结束。'], () => {
-    state.hearts = 3; state.energy = 100; state.world = 'real'; syncWorldUI();
+  say(['眼前一黑。', '……', '你在原地醒来。那只眼睛还在，故事还没有结束。'], () => {
+    state.hearts = state.maxHearts; state.energy = 100;
+    // 第六章：现实在燃烧，复活必须落在里世界，否则会被火再次吞没
+    state.world = state.chapter >= 6 ? 'other' : 'real';
+    state.fireT = 0; syncWorldUI();
+    if (state.world === 'other') spawnMonsters();
     const R = ROOMS[state.room];
     state.px = R.spawn.x; state.py = R.spawn.y;
-    spawnMonsters(); save();
+    save();
   });
 }
 
@@ -262,7 +397,9 @@ function updPlayer(dt) {
   if (keys.KeyA || keys.ArrowLeft) dx -= 1;
   if (keys.KeyD || keys.ArrowRight) dx += 1;
   const run = keys.ShiftLeft || keys.ShiftRight;
-  const sp = (run ? 235 : 155) * dt;
+  let sp = (run ? 235 : 155) * dt;
+  // 第四章：现实被水淹——涉水减速，里世界才是通路
+  if (state.chapter === 4 && state.world === 'real') sp *= .55;
   state.moving = dx !== 0 || dy !== 0;
   if (state.moving) {
     const l = Math.hypot(dx, dy); dx = dx / l * sp; dy = dy / l * sp;
@@ -272,8 +409,20 @@ function updPlayer(dt) {
     state.walkT += dt * (run ? 1.5 : 1);
   } else state.walkT = 0;
 
-  // 瞳力
-  if (state.world === 'other') {
+  // 瞳力（第六章规则倒置：里世界安全，现实被火吞噬）
+  if (state.chapter >= 6) {
+    if (state.world === 'other') {
+      state.energy = Math.min(100, state.energy + 11 * dt);
+      state.blind = Math.max(0, state.blind - dt);
+    } else {
+      state.energy = Math.min(100, state.energy + 5 * dt);
+      state.fireT = (state.fireT || 0) + dt;
+      if (state.fireT > 4.5) {
+        state.fireT = 0;
+        if (state.iframes <= 0) burnHurt();
+      }
+    }
+  } else if (state.world === 'other') {
     state.energy = Math.max(0, state.energy - 3.5 * dt);
     if (state.energy <= 0) {
       state.world = 'real'; state.blind = 2.4; state.switchFx = 1; state.switchDir = -1;
@@ -370,6 +519,7 @@ function pullBook(color) {
 const G = {
   say, gainItem, consumeItem, hasItem, gotoRoom, save, toast,
   pullBook, turnStatue, startChapter2, startChapter3, ringBell, writeLetter,
+  sortPile, seatGuests, torch, memory, choose, finishCh6,
 };
 
 /* ---------- 音效（WebAudio 极简） ---------- */
@@ -418,11 +568,11 @@ function drawScene(t, dt) {
     // 里世界独有物（全彩浮于其上）
     if (R.otherDecor) R.otherDecor(ctx, t, state.F);
     // 怪物
-    monsters.forEach(m => {
-      if (m.dead) return;
-      const fn = m.type === 'nurse' ? drawNurse : m.type === 'lurker' ? drawLurker : drawCrawler;
-      fn(ctx, m.mx, m.my, 1.1, t, m.seed);
-    });
+monsters.forEach(m => {
+if (m.dead) return;
+const fn = m.type === 'nurse' ? drawNurse : m.type === 'lurker' ? drawLurker : m.type === 'wraith' ? drawWraith : m.type === 'groom' ? drawGroom : drawCrawler;
+fn(ctx, m.mx, m.my, 1.1, t, m.seed, m.walk || 0);
+});
   }
 
   // 交互点提示（最近的）
@@ -667,7 +817,36 @@ if (new URLSearchParams(location.search).get('autotest')) {
       step('paper', () => { state.world = 'other'; spawnMonsters(); __act('paper'); __act('gate3'); });
       step('top', () => { state.world = 'real'; gotoRoom('lhtop'); });
       step('letter', () => __act('desk3'));
-      log.push('FINAL scene=' + state.scene + ' chapter=' + state.chapter + ' hearts=' + state.hearts);
+      step('end-ch3', () => { if (state.scene !== 'end') throw new Error('scene:' + state.scene); });
+      step('ch4-start', () => { startChapter4(); });
+      // CH4
+      step('post', () => { __act('lake'); if (state.room !== 'post') throw new Error('room:' + state.room); });
+      step('badge', () => { __act('counter'); if (!hasItem('邮差的徽章')) throw new Error('no badge'); });
+      step('sorting', () => { __act('sortdoor'); });
+      step('piles', () => { __world('other'); __act('doneroom'); __act('pileG'); __act('pileQ'); __act('pileF'); });
+      step('sorted', () => { if (!state.F.sorted || !hasItem('深井钥匙')) throw new Error('sorted?'); });
+      step('well', () => { __world('real'); __act('welldoor'); if (state.room !== 'well') throw new Error('room:' + state.room); });
+      step('drain', () => { __world('other'); __act('valve'); if (!state.F.drained) throw new Error('drained?'); });
+      step('boiler', () => { __world('real'); __act('boilerdoor'); });
+      step('letterbox', () => { __act('letterbox'); if (!hasItem('金青绯的名单')) throw new Error('no list'); });
+      step('feast', () => { __act('feastdoor'); if (state.room !== 'feast') throw new Error('room:' + state.room); });
+      // CH5
+      step('cat3', () => { __act('cat3'); if (!state.F.t3) throw new Error('t3?'); });
+      step('t1', () => { __act('kitchdoor'); __world('other'); __act('deer2'); if (!state.F.t1) throw new Error('t1?'); });
+      step('t2', () => { __world('real'); gotoRoom('feast'); __act('cryptdoor'); __world('other'); __act('rabbit'); if (!state.F.t2) throw new Error('t2?'); });
+      step('seat', () => { __world('real'); gotoRoom('feast'); __act('tables'); if (!state.F.seated) throw new Error('seated?'); spawnMonsters(); });
+      step('torch-miss', () => { __world('other'); if (monsters.length < 1 || monsters[0].type !== 'groom') throw new Error('nogroom'); monsters[0].mx = 200; monsters[0].my = 600; __act('candle'); if (state.F.groomDown) throw new Error('tooeasy'); });
+      step('torch-hit', () => { monsters[0].mx = 640; monsters[0].my = 430; __act('candle'); });
+      step('groom-down', () => { if (!state.F.groomDown || !hasItem('婚宴请柬')) throw new Error('groom alive'); });
+      // CH6
+      step('fire1', () => { __world('real'); gotoRoom('lhtop'); __world('other'); __act('tofire'); if (state.room !== 'fire1') throw new Error('room:' + state.room); });
+      step('mem1', () => { __act('clock'); if (!state.F.mem1) throw new Error('mem1?'); });
+      step('fire2', () => { __act('stairs'); __act('piano'); if (!state.F.mem2) throw new Error('mem2?'); });
+      step('fire3', () => { __act('stairs'); __act('kaleido'); if (!state.F.mem3) throw new Error('mem3?'); });
+      step('eyeshrine', () => { __act('up'); if (state.room !== 'eyeshrine') throw new Error('room:' + state.room); });
+      step('choose', () => { __act('read'); __world('other'); __act('keep'); });
+      step('finish', () => { __world('real'); __act('shrine'); if (state.scene !== 'end') throw new Error('scene:' + state.scene); });
+      log.push('FINAL scene=' + state.scene + ' chapter=' + state.chapter + ' hearts=' + state.hearts + ' cRead=' + !!state.F.cRead + ' cKeep=' + !!state.F.cKeep);
     } catch (e) { log.push('FATAL ' + e.message); }
     box.textContent = log.join('\n');
     document.title = 'AUTOTEST_DONE:' + state.scene;

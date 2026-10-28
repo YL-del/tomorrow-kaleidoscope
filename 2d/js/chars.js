@@ -25,15 +25,17 @@ export function drawBoy(ctx, x, y, s, facing = 'down', walkT = 0, opt = {}) {
 
   shadow(ctx, 18);
 
-  // 腿（分节：裤腿+鞋，带鞋底线）
+  // 腿（正视/背视：抬腿；侧视：前后摆腿）
   const legPh = W * 9;
-  const l1 = facing === 'up' || facing === 'down' ? lift(legPh) : 0;
-  const l2 = facing === 'up' || facing === 'down' ? lift(legPh + Math.PI) : 0;
+  const l1 = side ? Math.sin(legPh) * 5 : lift(legPh);
+  const l2 = side ? Math.sin(legPh + Math.PI) * 5 : lift(legPh + Math.PI);
   for (const [lx, ph] of [[-9, l1], [4, l2]]) {
-    poly(ctx, [[lx, -17 - Math.max(0, ph)], [lx + 5, -17 - Math.max(0, ph)], [lx + 5, -8], [lx, -8]], { fill: '#2c3040', lw: 2.2, amp: .7, seed: 21 + lx });
-    poly(ctx, [[lx, -8], [lx + 5, -8], [lx + 5, -2 - Math.max(0, ph) * .4], [lx, -2 - Math.max(0, ph) * .4]], { fill: '#262a38', lw: 2.2, amp: .6, seed: 22 + lx });
-    ell(ctx, lx + 2.5, -1, 5.5, 3, { fill: '#4a3a28', lw: 2, amp: .5, seed: 23 + lx });
-    line(ctx, lx - 2, -1, lx + 7, -1, { lw: 1.4, amp: .3, seed: 24 + lx, stroke: '#33281c' });
+    const ox = side ? ph : 0;
+    const ly = side ? 0 : Math.max(0, ph);
+    poly(ctx, [[lx, -17 - ly], [lx + 5, -17 - ly], [lx + 5 + ox * .5, -8], [lx + ox * .5, -8]], { fill: '#2c3040', lw: 2.2, amp: .7, seed: 21 + lx });
+    poly(ctx, [[lx + ox * .5, -8], [lx + 5 + ox * .5, -8], [lx + 5 + ox, -2 - ly * .4], [lx + ox, -2 - ly * .4]], { fill: '#262a38', lw: 2.2, amp: .6, seed: 22 + lx });
+    ell(ctx, lx + 2.5 + ox, -1 - ly * .4, 5.5, 3, { fill: '#4a3a28', lw: 2, amp: .5, seed: 23 + lx });
+    line(ctx, lx - 2 + ox, -1 - ly * .4, lx + 7 + ox, -1 - ly * .4, { lw: 1.4, amp: .3, seed: 24 + lx, stroke: '#33281c' });
   }
 
   // 身体（芥末黄大衣 v2：翻领+腰带+口袋）
@@ -53,7 +55,7 @@ export function drawBoy(ctx, x, y, s, facing = 'down', walkT = 0, opt = {}) {
   for (let i = 0; i < 3; i++) ell(ctx, -6, -40 - bob + i * 5, 1.5, 1.5, { fill: '#6e4c1c', lw: 1.2, amp: .3, seed: 33 + i });
 
   // 手臂（双段：上臂+前臂，行走摆动带肘弯）
-  const armSw = facing === 'up' || facing === 'down' ? Math.sin(W * 9) * 5 : 2;
+  const armSw = side ? Math.sin(W * 9) * 4 : Math.sin(W * 9) * 5;
   // 左臂（远侧，画在身体前）
   poly(ctx, [[-17, -46 - bob], [-22, -44 - bob], [-23, -33], [-18, -32]], { fill: '#b57f34', lw: 2.4, amp: .9, seed: 34 });
   poly(ctx, [[-23, -33], [-18, -32], [-19 + armSw * .4, -22], [-14 + armSw * .4, -23]], { fill: '#a5742e', lw: 2.4, amp: .9, seed: 35 });
@@ -399,15 +401,21 @@ export function drawPig(ctx, x, y, s, t) {
 
 /* ============ 里世界怪物 v2（寂静岭式：溃烂层 + 骨骼 + 滴液动画） ============ */
 
-/* 无面护士 v2：驼背、撕裂袍摆、腹部血渍滴落、缝合线十字线脚、
-   凹陷眼窝、长针滴液、量化抽搐+偶发头部猛歪 */
-export function drawNurse(ctx, x, y, s, t, seed = 0) {
+/* 无面护士 v2.1：加双腿（苍白皮肤+黑鞋）+ 迈步动画（walk 相位由引擎按实际位移驱动） */
+export function drawNurse(ctx, x, y, s, t, seed = 0, walk = 0) {
   const tq = Math.floor(t * 8) + seed * 100;
   const jx = hash(tq, seed) * 2.4, jy = hash(tq, seed + 1) * 1.6;
   const jerk = hash(Math.floor(t * 1.3) + seed * 7, seed + 2) > .82 ? .28 : 0;  // 偶发头部猛歪
   const tilt = .5 + hash(seed, 7) * .14 + jerk;
   ctx.save(); ctx.translate(x + jx, y + jy); ctx.scale(s, s);
   shadow(ctx, 15, .22);
+  // 双腿（苍白皮肤+黑鞋，交替迈步，一腿略拖拽）
+  const stA = Math.sin(walk) * 4.5, stB = Math.sin(walk + Math.PI) * 4.5;
+  const lfA = Math.max(0, Math.sin(walk)) * 2.2, lfB = Math.max(0, Math.sin(walk + Math.PI)) * 2.2;
+  poly(ctx, [[-7.5, -16], [-2.5, -16], [-2.5 + stA, -2 - lfA], [-7.5 + stA, -2 - lfA]], { fill: '#cfc4ae', lw: 2, amp: .5, seed: seed + 225 });
+  ell(ctx, -5 + stA, -1 - lfA, 3.2, 1.7, { fill: '#2c2620', lw: 1.4, amp: .3, seed: seed + 226 });
+  poly(ctx, [[2.5, -16], [7.5, -16], [7.5 + stB, -2 - lfB], [2.5 + stB, -2 - lfB]], { fill: '#c4b9a0', lw: 2, amp: .5, seed: seed + 227 });
+  ell(ctx, 5 + stB, -1 - lfB, 3.2, 1.7, { fill: '#2c2620', lw: 1.4, amp: .3, seed: seed + 228 });
   // 驼背的躯干（背部弧线隆起）
   poly(ctx, [[-14, -52], [-8, -58], [6, -58], [14, -50], [17, -14], [-17, -14]], { fill: '#ded8c8', lw: 2.8, amp: 1, seed: seed + 230 });
   // 撕裂袍摆（锯齿）
@@ -493,6 +501,77 @@ export function drawLurker(ctx, x, y, s, t, seed = 0) {
     ctx.beginPath(); ctx.moveTo(m * 9, -52); ctx.quadraticCurveTo(m * (18 - sw * .3), -30, m * 13, -14); ctx.stroke();
     for (let i = 0; i < 3; i++) line(ctx, m * 13, -14, m * (15 + i * 2), -4 + i * 2.5, { lw: 1.3, amp: .3, seed: seed + 290 + i + m * 3, stroke: '#241f1e' });
   }
+  ctx.restore();
+}
+
+/* 焄骸者：第四章——焦黑躯体+余烬裂纹，静止时几乎隐形，移动时显形 */
+export function drawWraith(ctx, x, y, s, t, seed = 0, walk = 0) {
+  const visible = Math.min(1, .12 + Math.min(1, Math.abs(walk) * .25) * .88);
+  const flick = .85 + hash(Math.floor(t * 14), seed) * .15;
+  ctx.save(); ctx.globalAlpha = visible * flick; ctx.translate(x, y); ctx.scale(s, s);
+  shadow(ctx, 14, .3 * visible);
+  const st = Math.sin(walk) * 5, stB = Math.sin(walk + Math.PI) * 5;
+  // 细长焦黑双腿
+  poly(ctx, [[-6, -18], [-2, -18], [-2 + st, -2], [-6 + st, -2]], { fill: '#1c1614', lw: 2, amp: .6, seed: seed + 400 });
+  poly(ctx, [[2, -18], [6, -18], [6 + stB, -2], [2 + stB, -2]], { fill: '#1c1614', lw: 2, amp: .6, seed: seed + 401 });
+  // 躯干（佝偦，余烬裂纹）
+  poly(ctx, [[-11, -54], [-3, -60], [7, -58], [13, -48], [12, -16], [-12, -16]], { fill: '#221a16', lw: 2.6, amp: 1, seed: seed + 402 });
+  for (let i = 0; i < 4; i++) {
+    const gx = -8 + i * 5, gy = -50 + i * 7;
+    line(ctx, gx, gy, gx + 2.5, gy + 6, { lw: 1.3, amp: .4, seed: seed + 403 + i, stroke: (Math.floor(t * 6 + i) % 3) ? '#c9501e' : '#e8913c' });
+  }
+  ell(ctx, 0, -30, 3, 5, { fill: '#c9501e', stroke: null, amp: .5, seed: seed + 407, alpha: .5 + hash(Math.floor(t * 8), seed + 1) * .3 });
+  // 双臂下垂（焦炭指尖）
+  for (const m of [-1, 1]) {
+    poly(ctx, [[m * 12, -52], [m * 17, -50], [m * 19, -22], [m * 13, -24]], { fill: '#221a16', lw: 2.2, amp: .8, seed: seed + 408 + m });
+    for (let i = 0; i < 3; i++) line(ctx, m * 17, -20, m * (18 + i * 2), -10 + i * 3, { lw: 1.2, amp: .3, seed: seed + 410 + i + m * 3, stroke: '#17110e' });
+  }
+  // 头（歪斜焦壳，眼窝余烬）
+  ctx.save(); ctx.translate(0, -68); ctx.rotate(.3 + Math.sin(t * 1.4 + seed) * .08);
+  ell(ctx, 0, 0, 9, 10, { fill: '#1c1614', lw: 2.4, amp: .8, seed: seed + 416 });
+  ell(ctx, -3.5, -1.5, 1.8, 2, { fill: '#e8913c', stroke: null, amp: .2, seed: seed + 417, alpha: .7 + hash(Math.floor(t * 9), seed + 2) * .3 });
+  ell(ctx, 3.5, -2, 1.8, 2, { fill: '#c9501e', stroke: null, amp: .2, seed: seed + 418, alpha: .6 + hash(Math.floor(t * 7), seed + 3) * .3 });
+  ctx.restore();
+  // 身上飘出的烟（微弱）
+  for (let i = 0; i < 3; i++) {
+    const ph = (t * .5 + i * .33 + seed * .1) % 1;
+    ell(ctx, Math.sin((ph + i) * 6) * 6, -70 - ph * 26, 3 + ph * 4, 2 + ph * 3, { fill: '#3a322c', stroke: null, amp: .6, seed: seed + 419 + i, alpha: (1 - ph) * .25 });
+  }
+  ctx.restore();
+}
+
+/* 无面新郎：第五章 Boss——白色礼服+头纱，步态端庄，突进致命 */
+export function drawGroom(ctx, x, y, s, t, seed = 0, walk = 0) {
+  const sw = Math.sin(walk) * 4;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  shadow(ctx, 16, .24);
+  // 白西裤双腿+尖头皮鞋
+  poly(ctx, [[-7, -18], [-2.5, -18], [-2.5 + sw, -2], [-7 + sw, -2]], { fill: '#e8e2d2', lw: 2.2, amp: .6, seed: seed + 430 });
+  ell(ctx, -4.75 + sw, -1, 4, 1.8, { fill: '#1c1814', lw: 1.6, amp: .3, seed: seed + 431 });
+  poly(ctx, [[2.5, -18], [7, -18], [7 - sw, -2], [2.5 - sw, -2]], { fill: '#e8e2d2', lw: 2.2, amp: .6, seed: seed + 432 });
+  ell(ctx, 4.75 - sw, -1, 4, 1.8, { fill: '#1c1814', lw: 1.6, amp: .3, seed: seed + 433 });
+  // 白礼服（燕尾）
+  poly(ctx, [[-13, -58], [13, -58], [16, -16], [-16, -16]], { fill: '#ece6d6', lw: 2.8, amp: 1, seed: seed + 434 });
+  poly(ctx, [[-14, -30], [-9, -26], [-11, -8], [-16, -12]], { fill: '#e2dcc8', lw: 2, amp: .7, seed: seed + 435 });
+  poly(ctx, [[14, -30], [9, -26], [11, -8], [16, -12]], { fill: '#e2dcc8', lw: 2, amp: .7, seed: seed + 436 });
+  // 胸前襟花（暗红花，会轻轻摇）
+  ell(ctx, 5, -48, 2.6, 2.4, { fill: '#8e3a44', lw: 1.4, amp: .3, seed: seed + 437, rot: Math.sin(t * 1.2 + seed) * .2 });
+  ell(ctx, 6.5, -46.5, 1.6, 1.5, { fill: '#6e2834', stroke: null, amp: .2, seed: seed + 438 });
+  // 黑领结
+  ell(ctx, 0, -54, 3.4, 1.8, { fill: '#1c1814', lw: 1.4, amp: .3, seed: seed + 439 });
+  // 双臂（一只前伸，像在邀请）
+  poly(ctx, [[-14, -56], [-19, -54], [-21, -26], [-15, -28]], { fill: '#ece6d6', lw: 2.2, amp: .8, seed: seed + 440 });
+  poly(ctx, [[14, -56], [20, -52], [26 + sw * .5, -36], [20 + sw * .5, -34]], { fill: '#ece6d6', lw: 2.2, amp: .8, seed: seed + 441 });
+  ell(ctx, 23 + sw * .5, -34, 3.2, 3.4, { fill: '#d8d2c4', lw: 1.8, amp: .4, seed: seed + 442 });
+  // 头+拖地头纱（无面，只有头纱下的暗影）
+  const hy = -72;
+  ell(ctx, 0, hy, 10, 11, { fill: '#e4decf', lw: 2.6, amp: .8, seed: seed + 443 });
+  ell(ctx, -3.5, hy + 1, 2.4, 2.8, { fill: '#a89a88', stroke: null, amp: .3, seed: seed + 444, alpha: .55 });
+  ell(ctx, 3.5, hy + .5, 2.4, 2.8, { fill: '#a89a88', stroke: null, amp: .3, seed: seed + 445, alpha: .55 });
+  // 头纱（半透明，随摆动飘）
+  ctx.globalAlpha = .4;
+  poly(ctx, [[-10, hy - 8], [10, hy - 8], [14 + sw, hy + 16], [8 + sw, hy + 30], [-8 + sw, hy + 28], [-13 + sw, hy + 14]], { fill: '#f2eee2', stroke: null, amp: 1, seed: seed + 446 });
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
