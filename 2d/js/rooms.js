@@ -399,7 +399,7 @@ ROOMS.street = {
         if (F.bellRung) g.startChapter3();
         else g.say(['浓雾在栈桥前堆成一堵墙，伸手进去就像伸进冷水。先让钟响起来。']);
       } },
-    { id: 'lake', x: 120, y: 600, r: 90, name: '湖边',
+    { id: 'lake', x: 120, y: 600, r: 110, name: F => F.letterWritten ? '湖底邮局 · 入口' : '湖边',
       act(F, g) {
         if (F.letterWritten) g.gotoRoom('post');
         else g.say(['湖水漆黑平缓。水面倒映的镇子……比岸上的镇子多出好几栋房子。']);
@@ -463,6 +463,27 @@ ROOMS.street = {
     if (F.bellRung) {
       poly(ctx, [[2200, 470], [2400, 430], [2400, 700], [2200, 700]], { fill: '#5d4a34', lw: 3, amp: 1.2, seed: 160 });
       for (let i = 0; i < 5; i++) line(ctx, 2210 + i * 45, 480 - i * 8, 2210 + i * 45, 700, { lw: 2.4, seed: 161 + i, stroke: '#4a3a28' });
+    }
+    // 湖底邮局入口（写完信后浮出水面）
+    if (F.letterWritten) {
+      // 从水里浮出的石阶
+      for (let i = 0; i < 3; i++) poly(ctx, [[30 + i * 26, 640 + i * 18], [110 + i * 26, 640 + i * 18], [116 + i * 26, 664 + i * 18], [24 + i * 26, 664 + i * 18]], { fill: ['#6a6252', '#5c5444', '#4e4638'][i], lw: 2.2, amp: .8, seed: 165 + i });
+      // 绿色邮亭门
+      furnitureShadow(ctx, 130, 600, 150);
+      poly(ctx, [[70, 400], [190, 400], [204, 590], [56, 590]], { fill: '#2f4a3c', lw: 3.4, amp: 1.2, seed: 168 });
+      poly(ctx, [[64, 390], [196, 390], [200, 404], [60, 404]], { fill: '#3c5c4c', lw: 2.6, amp: .8, seed: 169 });
+      // 投递口与信槽
+      line(ctx, 92, 440, 168, 440, { lw: 4, seed: 170, stroke: '#1c2a22' });
+      ell(ctx, 172, 470, 6, 6, { fill: '#c9a227', lw: 2, amp: .4, seed: 171 });
+      // 招牌
+      ctx.fillStyle = '#efe6cf'; ctx.fillRect(30, 340, 200, 46);
+      ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.strokeRect(30, 340, 200, 46);
+      ctx.fillStyle = '#2f2620'; ctx.font = 'bold 24px "Kaiti SC","KaiTi",serif'; ctx.textAlign = 'center';
+      ctx.fillText('湖 底 邮 局', 130, 373);
+      // 门缝里透出的光
+      ctx.save(); ctx.globalAlpha = .4 + Math.sin(t * 2.4) * .15;
+      poly(ctx, [[60, 590], [204, 590], [230, 660], [36, 660]], { fill: '#c9b98a', stroke: null, amp: 1, seed: 172, alpha: .5 });
+      ctx.restore();
     }
   },
 };
@@ -834,6 +855,8 @@ ROOMS.lhtop = {
       } },
     { id: 'tofire', x: 640, y: 360, r: 90, name: '上行的火光', world: 'other', show: F => F.ch5,
       act(F, g) { g.gotoRoom('fire1'); } },
+    { id: 'down', x: 1060, y: 610, r: 100, name: '下楼',
+      act(F, g) { g.gotoRoom('lh3'); } },
   ],
   otherDecor(ctx, t, F) { },
   monsters: F => [],

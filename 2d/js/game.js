@@ -3,7 +3,7 @@
 
 import { poly, ell, line, INK, PAL, hash, makeGrain, flame } from './art.js?v=26';
 import { drawBoy, drawNurse, drawLurker, drawCrawler, drawKaleidoEye, drawWraith, drawGroom } from './chars.js?v=26';
-import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=26';
+import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=27';
 
 const $ = s => document.querySelector(s);
 const cv = $('#gl'), ctx = cv.getContext('2d');
@@ -581,7 +581,7 @@ fn(ctx, m.mx, m.my, 1.1, t, m.seed, m.walk || 0);
     const bx = nh.x, by = nh.y - 46 + Math.sin(t * 3) * 3;
     ctx.save(); ctx.globalAlpha = .92;
     ctx.fillStyle = '#f4ecd6'; ctx.strokeStyle = INK; ctx.lineWidth = 2;
-    const label = nh.name + (nh.world === 'other' ? ' ㊙' : '');
+    const label = (typeof nh.name === 'function' ? nh.name(state.F) : nh.name) + (nh.world === 'other' ? ' ㊙' : '');
     ctx.font = '15px "Kaiti SC","KaiTi",serif';
     const tw = ctx.measureText(label).width + 46;
     ctx.beginPath(); ctx.roundRect(bx - tw / 2, by - 14, tw, 26, 6); ctx.fill(); ctx.stroke();
@@ -815,8 +815,9 @@ if (new URLSearchParams(location.search).get('autotest')) {
       step('ink', () => { state.world = 'other'; spawnMonsters(); __act('ink'); __act('gate2'); });
       step('lh3', () => { state.world = 'real'; gotoRoom('lh3'); });
       step('paper', () => { state.world = 'other'; spawnMonsters(); __act('paper'); __act('gate3'); });
-      step('top', () => { state.world = 'real'; gotoRoom('lhtop'); });
-      step('letter', () => __act('desk3'));
+step('top', () => { state.world = 'real'; gotoRoom('lhtop'); });
+step('top-down', () => { __act('down'); if (state.room !== 'lh3') throw new Error('room:' + state.room); gotoRoom('lhtop'); });
+step('letter', () => __act('desk3'));
       step('end-ch3', () => { if (state.scene !== 'end') throw new Error('scene:' + state.scene); });
       step('ch4-start', () => { startChapter4(); });
       // CH4
