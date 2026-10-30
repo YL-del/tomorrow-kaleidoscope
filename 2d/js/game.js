@@ -3,7 +3,7 @@
 
 import { poly, ell, line, INK, PAL, hash, makeGrain, flame } from './art.js?v=26';
 import { drawBoy, drawNurse, drawLurker, drawCrawler, drawKaleidoEye, drawWraith, drawGroom } from './chars.js?v=26';
-import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=27';
+import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=28';
 
 const $ = s => document.querySelector(s);
 const cv = $('#gl'), ctx = cv.getContext('2d');
@@ -239,8 +239,11 @@ function sortPile(color) {
   }
 }
 function seatGuests() {
-  const F = state.F;
-  if (F.seated) return;
+const F = state.F;
+if (F.seated) {
+if (!F.groomDown) say(['主位空着。无面新郎在里世界等着它的另一半——把它引到烛台边，靠近烛台按 E 点火。']);
+return;
+}
   if (!(hasItem('金青绯的名单') && F.t1 && F.t2 && F.t3)) {
     say(['座位牌空着，主位的椅子比别处都旧。', '你还需要：' + [
       !hasItem('金青绯的名单') ? '「金青绯的名单」' : null,
@@ -256,7 +259,7 @@ function seatGuests() {
     '宾客们陆续入座。只有主位空着。',
     '——音乐停了。一位穿白色礼服的「人」从廊柱后走向主位，头上罩着新娘的头纱。',
   ]);
-  toast('无面新郎出现了！把它引到烛台边，然后点燃它！（站在烛台旁按 E）');
+  toast('无面新郎只在里世界现身（按 F 切换）！把它引到烛台边，靠近烛台按 E 点火！');
 }
 function torch() {
   const F = state.F;
@@ -314,7 +317,7 @@ const pmx = m.mx, pmy = m.my;
 const dx = state.px - m.mx, dy = state.py - m.my;
     const dist = Math.hypot(dx, dy);
     if (!isFinite(dist) || dist < 1) { m.mx = m.x; m.my = m.y; return; }
-    m.cd = Math.max(0, m.cd - dt);
+    m.cd = Math.max(0, (m.cd || 0) - dt);
 if (m.type === 'nurse') {
 if (dist < 280) { m.mx += (dx / dist) * m.speed * dt; m.my += (dy / dist) * m.speed * dt; }
 else { m.wt += dt; m.mx += Math.sin(m.wt * .8 + m.seed) * 22 * dt; m.my += Math.cos(m.wt * .6 + m.seed) * 22 * dt; }
@@ -331,6 +334,7 @@ m.lunge = .4; m.cd = 2.4;
 const gs = 340; m.lvx = dx / dist * gs; m.lvy = dy / dist * gs;
 toast('无面新郎伸出了手——');
 }
+m.lunge = m.lunge || 0;
 }
 } else if (m.type === 'lurker') {
       if (m.lunge > 0) {

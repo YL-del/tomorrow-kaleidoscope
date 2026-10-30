@@ -1083,7 +1083,7 @@ ROOMS.feast = {
   hotspots: [
     { id: 'tables', x: 640, y: 520, r: 110, name: '长桌与座位牌',
       act(F, g) { g.seatGuests(); } },
-    { id: 'candle', x: 640, y: 430, r: 90, name: '大烛台', world: 'other', show: F => F.seated && !F.groomDown,
+    { id: 'candle', x: 640, y: 430, r: 100, name: F => F.groomDown ? '大烛台' : '大烛台（点火！）', show: F => F.seated && !F.groomDown,
       act(F, g) { g.torch(); } },
     { id: 'kitchdoor', x: 1060, y: 460, r: 90, name: '后厨', show: F => !F.ch5 || F.groomDown || F.seated,
       act(F, g) { g.gotoRoom('kitchen'); } },
@@ -1177,6 +1177,9 @@ ROOMS.kitchen = {
     furnitureShadow(ctx, 700, 530, 150);
     ell(ctx, 700, 500, 62, 34, { fill: '#3a3a38', lw: 3, amp: 1, seed: 581 });
     poly(ctx, [[660, 470], [740, 470], [734, 502], [666, 502]], { fill: '#4a4a46', lw: 2.6, amp: .8, seed: 582 });
+    // 鹿管家（证词之一）
+    furnitureShadow(ctx, 700, 560, 120);
+    drawDeer(ctx, 700, 560, 1.06, t);
     // 案板与备菜
     poly(ctx, [[880, 440], [1080, 440], [1092, 500], [868, 500]], { fill: '#6e5138', lw: 2.8, amp: 1, seed: 583 });
     // 回门
