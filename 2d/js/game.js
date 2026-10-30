@@ -3,7 +3,7 @@
 
 import { poly, ell, line, INK, PAL, hash, makeGrain, flame } from './art.js?v=26';
 import { drawBoy, drawNurse, drawLurker, drawCrawler, drawKaleidoEye, drawWraith, drawGroom } from './chars.js?v=26';
-import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=28';
+import { ROOMS, FLOOR_TOP, FLOOR_BOT } from './rooms.js?v=29';
 
 const $ = s => document.querySelector(s);
 const cv = $('#gl'), ctx = cv.getContext('2d');
@@ -241,7 +241,13 @@ function sortPile(color) {
 function seatGuests() {
 const F = state.F;
 if (F.seated) {
-if (!F.groomDown) say(['主位空着。无面新郎在里世界等着它的另一半——把它引到烛台边，靠近烛台按 E 点火。']);
+if (F.groomDown) {
+say(['烛台的火烧过了，地上的灰已经冷了。', F.ch5 ? '——灯塔顶层传来钟声。去那里看看吧。' : '灰烬里应该留下了什么。']);
+} else {
+// 自愈：新郎应该在场，若因任何原因丢失则重新生成
+if (!monsters.find(m => m.type === 'groom' && !m.dead)) spawnMonsters();
+say(['主位空着。无面新郎在里世界等着——按 F 切换到里世界，把它引到烛台边，靠近烛台按 E 点火。']);
+}
 return;
 }
   if (!(hasItem('金青绯的名单') && F.t1 && F.t2 && F.t3)) {
